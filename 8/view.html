@@ -6,14 +6,16 @@
         <div id="editor">
             <table><tr><td>
                 New heuristic: function(cells) { "use strict"; <br />
-            <textarea id="newHeuristic" cols="70" rows="10">// new heuristic!</textarea><br />
+            <textarea id="newHeuristic" cols="70" rows="10"></textarea><br />
             } <br />
             <a href="#" onclick="addHeuristic(); return false;">Add heuristic</a>
             </td><td>
-                New sketch: function(context, row, col, cell) { "use strict";<br />
-            <textarea id="newSketch" cols="70" rows="10">// new sketch!</textarea><br />
+                New sketch: function(context, center, cell) { "use strict";<br />
+            <textarea id="newSketch" cols="70" rows="10"></textarea><br />
             } <br />
             <a href="#" onclick="addSketch(); return false;">Add sketch</a>
+            <td><div id="globals">
+            </div>
             </td></table>
         </div>
         <div id="display"><canvas id="puzzle"></canvas></div>
