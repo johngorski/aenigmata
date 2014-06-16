@@ -70,6 +70,20 @@ var findPossiblePaths = function(cells) { "use strict";
     });
 };
 
+var countCellDegree = function(cells) { "use strict";
+    // run after findPossiblePaths()
+    eachCell(function(cell) { "use strict";
+        var degree = 0;
+        if (!(cell.excluded || cell.shaded)) {
+            if (cell.canGoUp) { degree += 1; }
+            if (cell.canGoDown) { degree += 1; }
+            if (cell.canGoLeft) { degree += 1; }
+            if (cell.canGoRight) { degree += 1; }
+        }
+        cell.degree = degree;
+    });
+};
+
 var drawEdge = function(context, center, cell) { "use strict";
     var leftEdge = center.x - CELL_DIMENSIONS.width / 2;
     var rightEdge = leftEdge + CELL_DIMENSIONS.width;
@@ -245,9 +259,75 @@ var markPathCellsFromExhaustedShade = function(cells) { "use strict";
     });
 };
 
+var markPathWhenDegree2CellsContainPath = function(cells) { "use strict";
+    eachCell(function(cell, i, j) { "use strict";
+        if (cell.degree === 2 && cell.containsPath) {
+            if (cell.canGoUp) {
+                cell.pathUp = true;
+                if (i > 0) {
+                    cells[i - 1][j].pathDown = true;
+                }
+            }
+            if (cell.canGoDown) {
+                cell.pathDown = true;
+                if (i + 1 < cells.length) {
+                    cells[i + 1][j].pathUp = true;
+                }
+            }
+            if (cell.canGoLeft) {
+                cell.pathLeft = true;
+                if (j > 0) {
+                    cells[i][j - 1].pathRight = true;
+                }
+            }
+            if (cell.canGoRight) {
+                cell.pathRight = true;
+                if (j + 1 < cells[0].length) {
+                    cells[i][j + 1].pathLeft = true;
+                }
+            }
+        }
+    });
+};
+
+var drawPath = function(context, center, cell) { "use strict";
+    var w = CELL_DIMENSIONS.width / 2;
+    var h = CELL_DIMENSIONS.height / 2;
+    var centerTo = function(x, y) { "use strict"
+        context.moveTo(center.x, center.y);
+        context.lineTo(x, y);
+    };
+    context.beginPath();
+    context.strokeStyle = "#00f";
+    context.lineWidth = CELL_DIMENSIONS.width / 10;
+
+    if (cell.pathUp) {
+        centerTo(center.x, center.y - h);
+    }
+    if (cell.pathDown) {
+        centerTo(center.x, center.y + h);
+    }
+    if (cell.pathLeft) {
+        centerTo(center.x - w, center.y);
+    }
+    if (cell.pathRight) {
+        centerTo(center.x + w, center.y);
+    }
+
+    context.stroke();
+};
+
 var cells = [];
 
-var heuristics = [initializeCells, findCellsExcludedFromPath, findPossiblePaths, markPathCellsFromExhaustedShade];
+var heuristics = [
+    initializeCells,
+    findCellsExcludedFromPath,
+    findPossiblePaths,
+    markPathCellsFromExhaustedShade,
+    countCellDegree,
+    markPathWhenDegree2CellsContainPath
+];
+
 var applyHeuristics = function(heuristics) { "use strict";
     heuristics.forEach(function(h) { "use strict";
         try {
@@ -258,7 +338,14 @@ var applyHeuristics = function(heuristics) { "use strict";
     });
 };
 
-var sketches = [drawEdge, drawDirection, drawCharacter, drawUpPossible, drawDownPossible, drawLeftPossible, drawRightPossible, drawContainsPath];
+var sketches = [
+    drawEdge,
+    drawDirection,
+    drawCharacter,
+    drawUpPossible, drawDownPossible, drawLeftPossible, drawRightPossible,
+    drawContainsPath,
+    drawPath
+];
 var context = puzzle.getContext("2d");
 var canvas = document.getElementById("puzzle");
 
