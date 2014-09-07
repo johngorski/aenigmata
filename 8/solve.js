@@ -45,6 +45,8 @@ var initializeCells = function(cells) { "use strict";
         row = [];
         for (j = 0; j < characters[i].length; j += 1) {
             row[j] = {character: characters[i][j]};
+            row[j].i = i;
+            row[j].j = j;
             if (directions[i][j] !== ' ') {
                 row[j].direction = directions[i][j];
             }
@@ -70,17 +72,21 @@ var findPossiblePaths = function(cells) { "use strict";
     });
 };
 
+var degree = function(cell) { "use strict";
+    var degree = 0;
+    if (!(cell.excluded || cell.shaded)) {
+        if (cell.canGoUp) { degree += 1; }
+        if (cell.canGoDown) { degree += 1; }
+        if (cell.canGoLeft) { degree += 1; }
+        if (cell.canGoRight) { degree += 1; }
+    }
+    return degree;
+};
+
 var countCellDegree = function(cells) { "use strict";
     // run after findPossiblePaths()
     eachCell(function(cell) { "use strict";
-        var degree = 0;
-        if (!(cell.excluded || cell.shaded)) {
-            if (cell.canGoUp) { degree += 1; }
-            if (cell.canGoDown) { degree += 1; }
-            if (cell.canGoLeft) { degree += 1; }
-            if (cell.canGoRight) { degree += 1; }
-        }
-        cell.degree = degree;
+        cell.degree = degree(cell);
     });
 };
 
@@ -317,6 +323,87 @@ var drawPath = function(context, center, cell) { "use strict";
     context.stroke();
 };
 
+var shadeCell = function(context, center, cell) { "use strict";
+    if (cell.shaded) {
+        context.strokeStyle = "#000";
+        context.fillRect(center.x - CELL_DIMENSIONS.width / 2, center.y - CELL_DIMENSIONS.height / 2,
+                         CELL_DIMENSIONS.width, CELL_DIMENSIONS.height);
+    }
+};
+
+var eachAdjacentCell = function(cells, row, col, f) { "use strict";
+    // row, col are the indices to a valid cell on the grid
+    if (row > 0) {
+        f(cells[row - 1][col]);
+    }
+    if (col > 0) {
+        f(cells[row][col - 1]);
+    }
+    if (row + 1 < cells.length) {
+        f(cells[row + 1][col]);
+    }
+    if (col + 1 < cells[0].length) {
+        f(cells[row][col + 1]);
+    }
+};
+
+var cellsAdjacentToDegree2CellsMustParticipate = function(cells) { "use strict";
+    eachCell(function(cell, i, j) { "use strict";
+        if (cell.degree === 2) {
+            eachAdjacentCell(cells, i, j, function(c) { "use strict";
+                c.containsPath = !(c.excluded || c.shaded);
+            });
+        }
+    });
+};
+
+var shade = function(c) { "use strict";
+    c.shaded = true;
+    eachAdjacentCell(cells, c.i, c.j, function(d) { "use strict";
+        d.containsPath = true;
+    });
+    c.canGoUp = false;
+    if (i > 0) {
+        cells[i - 1][j].canGoDown = false;
+    }
+    c.canGoLeft = false;
+    if (j > 0) {
+        cells[i][j - 1].canGoRight = false;
+    }
+    c.canGoDown = false;
+    if (i + 1 < cells.length) {
+        cells[i + 1][j].canGoUp = false;
+    }
+    c.canGoRight = false;
+    if (j + 1 < cells[0].length) {
+        cells[i][j + 1].canGoLeft = false;
+    }
+};
+
+var shadeUnshadedCells = function(cells) { "use strict";
+    eachCell(function(cell, i, j) { "use strict";
+        var potentialShadedCells = 0, shadedCellsNeededInDirection = 0;
+        if (cell.direction) {
+            shadedCellsNeededInDirection += cell.character;
+            eachCellInDirection(i, j, cell.direction, function(c) { "use strict";
+                if (c.shaded) {
+                    shadedCellsNeededInDirection -= 1;
+                }
+                if (!c.shaded && !c.containsPath && !c.excluded) {
+                    potentialShadedCells += 1;
+                }
+            });
+            if (shadedCellsNeededInDirection === potentialShadedCells) {
+                eachCellInDirection(i, j, cell.direction, function(c) { "use strict";
+                    if (!c.shaded && !c.containsPath && !c.excluded) {
+                        shade(c);
+                    }
+                });
+            }
+        }
+    });
+};
+
 var cells = [];
 
 var heuristics = [
@@ -325,6 +412,8 @@ var heuristics = [
     findPossiblePaths,
     markPathCellsFromExhaustedShade,
     countCellDegree,
+    cellsAdjacentToDegree2CellsMustParticipate,
+    shadeUnshadedCells,
     markPathWhenDegree2CellsContainPath
 ];
 
@@ -339,6 +428,7 @@ var applyHeuristics = function(heuristics) { "use strict";
 };
 
 var sketches = [
+    shadeCell,
     drawEdge,
     drawDirection,
     drawCharacter,
