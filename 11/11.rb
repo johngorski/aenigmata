@@ -22,11 +22,11 @@ end
 
 ciphertext = 'SSOJUFWFFSFBLJYMNHMMAIHXVTGCYNDXYVBTFHYYK'
 ss_raw =     '02112111111111112121111112111111211121111'
-shiftshifts = ss_raw.split(//).map {|r| r.ord - '0'.ord}
-
 # Example puzzle
 # ciphertext = 'GMIZYFXZRA'
-# shiftshifts = [0, 2, 1, 1, 2, 2, 1, 2, 1, 2]
+# ss_raw     = '0211221212'
+
+shiftshifts = ss_raw.split(//).map {|r| r.ord - '0'.ord}
 
 puts "ciphertext doesn't match shiftshifts (missing #{ciphertext.length - shiftshifts.length} shiftshifts)" unless ciphertext.length == shiftshifts.length
 
