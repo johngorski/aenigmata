@@ -39,14 +39,15 @@ end
 # Y 1
 # Y 1
 # K 1
-ciphertext = 'FBLJYMNHMMAIHXVTGCYNDXYVBTFHYYK'
-shiftshifts = [1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1]
+ciphertext = 'SSOJUFWFFSFBLJYMNHMMAIHXVTGCYNDXYVBTFHYYK'
+ss_raw =     '02112111111111112121111112111111211121111'
+shiftshifts = ss_raw.split(//).map {|r| r.ord - '0'.ord}
 
 # Example puzzle
 # ciphertext = 'GMIZYFXZRA'
 # shiftshifts = [0, 2, 1, 1, 2, 2, 1, 2, 1, 2]
 
-puts "ciphertext doesn't match shiftshifts" unless ciphertext.length == shiftshifts.length
+puts "ciphertext doesn't match shiftshifts (missing #{ciphertext.length - shiftshifts.length} shiftshifts)" unless ciphertext.length == shiftshifts.length
 
 (0...10).each do |initial_cumulative_shift|
     cum_shift = initial_cumulative_shift
