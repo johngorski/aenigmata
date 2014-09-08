@@ -20,25 +20,6 @@ end
 # (0..25).each { |i| print shift 'X', i }
 # puts
 
-# H 1
-# X 1
-# V 1
-# T 2
-# G 1
-# C 1
-# Y 1
-# N 1
-# D 1
-# X 1
-# Y 2
-# V 1
-# B 1
-# T 1
-# F 2
-# H 1
-# Y 1
-# Y 1
-# K 1
 ciphertext = 'SSOJUFWFFSFBLJYMNHMMAIHXVTGCYNDXYVBTFHYYK'
 ss_raw =     '02112111111111112121111112111111211121111'
 shiftshifts = ss_raw.split(//).map {|r| r.ord - '0'.ord}
