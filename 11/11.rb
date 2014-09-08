@@ -20,8 +20,27 @@ end
 # (0..25).each { |i| print shift 'X', i }
 # puts
 
-ciphertext = 'NDXYVBTFHYYK'
-shiftshifts = [1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1]
+#
+# X 1
+# V 1
+# T 2
+# G 1
+# C 1
+# Y 1
+# N 1
+# D 1
+# X 1
+# Y 2
+# V 1
+# B 1
+# T 1
+# F 2
+# H 1
+# Y 1
+# Y 1
+# K 1
+ciphertext = 'XVTGCYNDXYVBTFHYYK'
+shiftshifts = [1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1]
 
 # Example puzzle
 # ciphertext = 'GMIZYFXZRA'
