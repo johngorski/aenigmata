@@ -39,8 +39,8 @@ end
 # Y 1
 # Y 1
 # K 1
-ciphertext = 'MAIHXVTGCYNDXYVBTFHYYK'
-shiftshifts = [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1]
+ciphertext = 'FBLJYMNHMMAIHXVTGCYNDXYVBTFHYYK'
+shiftshifts = [1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1]
 
 # Example puzzle
 # ciphertext = 'GMIZYFXZRA'
