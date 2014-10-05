@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <title>John's Jovial Automata for Ada's</title>
+    </head>
+    <body>
+        <div>
+            <input id="message" value="k os bg in gr fiq fy q ky jq dfy pq hs e kn a ls gt c (u) k jxy ejn ds p ghq fq fn l gl kt"/> <a href="#" onclick="makePicture(); return false;">Make picture</a>
+        </div>
+        <div id="display"><canvas id="puzzle" width="400" height="300"></canvas></div>
+        <script type="text/javascript" src="solve.js"></script>
+        <script type="text/javascript">
+            var scale = 10;
+            var canvas = document.getElementById("puzzle");
+            var context = canvas.getContext("2d");
+            var width = canvas.width;
+            var height = canvas.height;
+            var cursor;
+
+            var clearCanvas = function() {
+            };
+
+            var centerPen = function() {
+                cursor = new Vector(width / 2 + 0.5, height / 2 + 0.5);
+                context.moveTo(cursor.x, cursor.y);
+            };
+
+            var draw = function(v) {
+                cursor = cursor.plus(v.times(scale));
+                context.lineTo(cursor.x, cursor.y);
+            };
+
+            var move = function(v) {
+                cursor = cursor.plus(v.times(scale));
+                context.moveTo(cursor.x, cursor.y);
+            };
+
+            var makePicture = function() { 
+                var message = document.getElementById("message").value;
+                var i;
+                var segments = message.split(" ");
+                var word;
+
+                clearCanvas();
+                context.beginPath();
+                centerPen();
+
+                for(i = 0; i < segments.length; i += 1) {
+                    word = segments[i];
+                    if (word.match(/^\([a-z]+\)$/)) {
+                        move(segment(/[a-z]+/.exec(word)[0]));
+                    } else if (word.match(/^[a-z]+$/)) {
+                        draw(segment(word));
+                    }
+                }
+
+                context.stroke();
+            };
+        </script>
+    </body>
+</html>
