@@ -7,7 +7,13 @@ import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
 class SolverTest extends FunSuite {
-  test("one plus one is two") {
-    assert(1 + 1 === 2)
+  type CountingPuzzle = Int
+
+  test("count with heuristics") {
+    val solver = new Solver[CountingPuzzle](
+      1, List((cp: CountingPuzzle) => if (cp < 10) cp + 1 else cp))
+    assert(solver.solution === 10)
   }
+
+
 }
