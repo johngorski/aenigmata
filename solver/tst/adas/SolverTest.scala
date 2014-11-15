@@ -14,6 +14,4 @@ class SolverTest extends FunSuite {
       1, List((cp: CountingPuzzle) => if (cp < 10) cp + 1 else cp))
     assert(solver.solution === 10)
   }
-
-
 }
