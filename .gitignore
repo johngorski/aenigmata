@@ -16,6 +16,9 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 *.swp
+.idea
+out
+*.iml
 
 puzzles
 
