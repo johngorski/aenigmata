@@ -1,4 +1,4 @@
-package adas
+package github.johngorskijr.aenigmata.adas
 
 import org.scalatest.FunSuite
 

@@ -1,4 +1,4 @@
-package adas
+package github.johngorskijr.aenigmata.adas
 
 /**
  * Functional programming approximation of my general puzzle-solving approach.
@@ -9,7 +9,7 @@ class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
   type Heuristic = Puzzle => Puzzle
 
   /**
-   * This is better as a def, not a val. If it were a val, the adas.Solver object
+   * This is better as a def, not a val. If it were a val, the github.johngorskijr.aenigmata.adas.Solver object
    * would hold references to all steps when all that may have been requested
    * was the solution. This would be unfortunate.
    *
@@ -64,7 +64,7 @@ class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
    *  1. There exists an associative, commutative operator + for combining Puzzles.
    *     - TODO: Enforce via bounded generics.
    *  2. All heuristics yield puzzle states that are monotonically increasing given partial ordering O.
-   *     - TODO: Enforce via automatically included tests run against every adas.Solver/Puzzle implementation.
+   *     - TODO: Enforce via automatically included tests run against every github.johngorskijr.aenigmata.adas.Solver/Puzzle implementation.
    *  3. No Heuristic makes a mistake or guesses. Deductions only!
    *  4. + is a monotonically increasing operation w.r.t. the ordering referenced as O.
    */
