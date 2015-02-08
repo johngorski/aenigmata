@@ -5,7 +5,7 @@ package github.johngorskijr.aenigmata.adas
  *
  * Created by jgorski on 11/6/14.
  */
-class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
+class Solver[Puzzle](puzzle: Puzzle, heuristics: Seq[Puzzle => Puzzle]) {
   type Heuristic = Puzzle => Puzzle
 
   /**
@@ -17,7 +17,7 @@ class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
    */
   def steps: Stream[Puzzle] = puzzle #:: nextStep(puzzle, heuristics, progress = false)
 
-  def nextStep(p: Puzzle, hs: List[Heuristic], progress: Boolean): Stream[Puzzle] = hs match {
+  def nextStep(p: Puzzle, hs: Seq[Heuristic], progress: Boolean): Stream[Puzzle] = hs match {
     case List() => if (!progress || heuristics.isEmpty) Stream()
       else nextStep(p, heuristics, progress = false)
     case h :: hTail =>
@@ -47,8 +47,8 @@ class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
     else apply(updated, h)
   }
   
-  def applyAll(p: Puzzle, hs: List[Heuristic]): Puzzle = hs match {
-    case List() => p
+  def applyAll(p: Puzzle, hs: Seq[Heuristic]): Puzzle = hs match {
+    case Seq() => p
     case h :: hTail => applyAll(apply(p, h), hTail)
   }
 
