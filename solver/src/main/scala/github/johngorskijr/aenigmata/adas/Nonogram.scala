@@ -1,5 +1,7 @@
 package github.johngorskijr.aenigmata.adas
 
+import github.johngorskijr.aenigmata.adas.Solver
+
 /**
  * http://www.goobix.com/games/nonograms/
  *
@@ -33,11 +35,11 @@ object Nonogram {
    *
    *         3
    *     3 3 1 3 2
-   * 3 1
-   *   5
-   *   4
-   *   1
-   *   1
+   * 3 1 x x x o x
+   *   5 x x x x x
+   *   4 x x x x o
+   *   1 o o o x o
+   *   1 o o x o o
    *
    * for our purposes would be represented as the string
    * ((3,1),(5),(4),(1),(1)),((3),(3),(3,1),(3),(2))
@@ -49,10 +51,75 @@ object Nonogram {
    * @param raw
    * @return
    */
-  def load(raw: String): Option[Constraints] = {
-    Some()
+  def load(raw: String): Constraints = (
+    Vector(3 :: 1 :: Nil, 5 :: Nil, 4 :: Nil, 1 :: Nil, 1 :: Nil),
+    Vector(3 :: Nil, 3 :: Nil, 3 :: 1 :: Nil, 3 :: Nil, 2 :: Nil)
+  )
+
+  class Puzzle(c: State, constr: Constraints) {
+    val cells = c
+    val constraints = constr
+
+    def withCells(cells: State): Puzzle =
+      if (cells == this.cells) this
+      else new Puzzle(cells, constraints)
   }
 
-  class Puzzle(cells: State, rowConstraints: Vector[List[Int]], colConstraints: Vector[List[Int]]) {
+  /**
+   * All right. So. We sum up the constraints.
+   * The constraint groups are spaced by at least one open cell.
+   * So if the sum of the constraints with one extra for the "at least one more"
+   * open cell is equal to the available cells, we should be able to fill everything.
+   *
+   * We could also fiddle with Constraints based on the filled state of our puzzle,
+   * but that might be more in the realm of other heuristics, possibly with transformations.
+   *
+   * @param row
+   * @param constraint
+   * @return
+   */
+  def resolveRow(row: Vector[Cell], constraint: List[Int]): Vector[Cell] = {
+    if (constraint.sum + constraint.length - 1 != row.length) row
+    else fullyConstrainedRow(constraint)
+  }
+
+  def fullyConstrainedRow(constraint: List[Int]): Vector[Cell] = {
+    def fill(cnstr: List[Int], acc: List[Cell]): List[Cell] = cnstr match {
+      case Nil => acc.reverse
+      case head :: tail =>
+    }
+
+    fill(constraint, Nil).to[Vector]
+  }
+
+  /**
+   * Look at each row in p.
+   *
+   * @param p
+   * @return
+   */
+  def checkRows(p: Puzzle): Puzzle = {
+    val rows = p.cells
+    val rowConstraints = p.constraints match {
+      case (forRows, _) => forRows
+    }
+
+    val range = Range(0, rows(0).length)
+    val newRows = range map (r => resolveRow(rows(r), rowConstraints(r)))
+
+    p.withCells(newRows)
+  }
+
+  def checkCols(p: Puzzle): Puzzle = {
+    p
+  }
+
+  def solve: Puzzle = {
+    val constraints = load("anything")
+    val emptyRow = Vector(UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN)
+    val cells = Vector(emptyRow, emptyRow, emptyRow, emptyRow, emptyRow)
+    val p: Puzzle = new Puzzle(cells, constraints)
+    val solver: Solver[Puzzle] = new Solver(p, checkRows :: Nil)
+    solver.solution
   }
 }

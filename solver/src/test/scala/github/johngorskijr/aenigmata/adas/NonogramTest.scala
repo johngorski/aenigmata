@@ -13,7 +13,8 @@ import github.johngorskijr.aenigmata.adas.Nonogram._
  */
 @RunWith(classOf[JUnitRunner])
 class NonogramTest extends FunSuite {
-  test("load 5x5") {
-    val actual = load("((3,1),(5),(4),(1),(1)),((3),(3),(3,1),(3),(2))")
+  test("Solve!") {
+    val solution = solve
+    solution.cells
   }
 }
