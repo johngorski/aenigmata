@@ -14,7 +14,11 @@ import github.johngorskijr.aenigmata.adas.Nonogram._
 @RunWith(classOf[JUnitRunner])
 class NonogramTest extends FunSuite {
   test("Solve!") {
-    val solution = solve
+    val p: Puzzle = fromConstraints(load("anything"))
+
+    val solver: Solver[Puzzle] = solverFor(p)
+    val solution = solver.solution
+
     solution.cells
   }
 

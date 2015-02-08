@@ -13,12 +13,6 @@ package github.johngorskijr.aenigmata.adas
  */
 object Nonogram {
 
-  // object Cell extends Enumeration {
-  // type State = Value
-  // val Unknown, Open, Filled = Value
-  // }
-
-  // Until I figure out Enum use in Scala, I'll just use Int constants
   type Cell = Int
   val UNKNOWN: Cell = 0
   val OPEN: Cell = 1
@@ -32,13 +26,13 @@ object Nonogram {
   /**
    * e.g.
    *
-   * 3
-   * 3 3 1 3 2
+   *         3
+   *     3 3 1 3 2
    * 3 1 x x x o x
-   * 5 x x x x x
-   * 4 x x x x o
-   * 1 o o o x o
-   * 1 o o x o o
+   *   5 x x x x x
+   *   4 x x x x o
+   *   1 o o o x o
+   *   1 o o x o o
    *
    * for our purposes would be represented as the string
    * ((3,1),(5),(4),(1),(1)),((3),(3),(3,1),(3),(2))
@@ -52,13 +46,7 @@ object Nonogram {
     Vector(3 :: Nil, 3 :: Nil, 3 :: 1 :: Nil, 3 :: Nil, 2 :: Nil)
     )
 
-  case class Puzzle(c: State, constr: Constraints) {
-    val cells = c
-    val constraints = constr
-
-    def withCells(cells: State): Puzzle =
-      if (cells == this.cells) this
-      else new Puzzle(cells, constraints)
+  case class Puzzle(cells: State, constraints: Constraints) {
 
     def row(r: Int): (Vector[Cell], Constraint) = (cells(r),
       constraints match { case (rowConstraints, _) => rowConstraints(r) }
@@ -115,15 +103,23 @@ object Nonogram {
     }
   }
 
-  def solve: Puzzle = {
-    val constraints = load("anything")
-    val emptyRow = Vector(UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN, UNKNOWN)
-    val cells = Vector(emptyRow, emptyRow, emptyRow, emptyRow, emptyRow)
-    val p: Puzzle = Puzzle(cells, constraints)
-    val baseRowChecks = Range(0, p.cells.length) map checkBaseRow
-    val baseColChecks = Range(0, p.cells(0).length) map checkBaseCol
+  def fromConstraints(constraints: Constraints): Puzzle = constraints match {
+    case (rowConstraints, colConstraints) =>
+      def fill[Element](i: Int, stop: Int, element: Element, acc: => Vector[Element]): Vector[Element] =
+        if (i >= stop) acc
+        else fill(i + 1, stop, element, acc :+ element)
+
+      val rowPrototype = fill(0, colConstraints.length, UNKNOWN, Vector())
+      val cells = fill(0, rowConstraints.length, rowPrototype, Vector())
+
+      Puzzle(cells, constraints)
+  }
+
+  def solverFor(puzzle: Puzzle): Solver[Puzzle] = {
+    val baseRowChecks = Range(0, puzzle.cells.length) map checkBaseRow
+    val baseColChecks = Range(0, puzzle.cells(0).length) map checkBaseCol
     val heuristics = baseRowChecks ++ baseColChecks
-    val solver: Solver[Puzzle] = new Solver(p, heuristics.to[List])
-    solver.solution
+
+    new Solver(puzzle, heuristics.to[List])
   }
 }
