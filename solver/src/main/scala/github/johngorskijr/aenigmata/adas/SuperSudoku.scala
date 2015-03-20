@@ -2,9 +2,15 @@ package github.johngorskijr.aenigmata.adas
 
 object SuperSudoku {
   type Cell = Set[Int]
+
+  def printable: Cell => String = cell => if (cell.size != 1) "?" else cell.last.toString
+
   type PuzzleState = Vector[Vector[Cell]]
 
-  case class Location(row: Int, col: Int)
+  case class Location(row: Int, col: Int) {
+    override def toString = s"($row, $col)"
+  }
+
   case class NumConstraint(cells: (Location, Location), requiredDelta: Int)
   case class LtConstraint(lesserCell: Location, greaterCell: Location)
 
@@ -12,6 +18,24 @@ object SuperSudoku {
     def cellAt(location: Location): Cell = location match {
       case Location(row, col) => state(row)(col)
     }
+    override def toString = tinyBoard + "\n" + qContents
+
+    def tinyBoard = (
+      for {
+        row <- state
+      } yield (row map printable).mkString
+      ).mkString("\n")
+
+    def cellToString: Cell => String = c =>
+      if (c.size == 1) c.last.toString
+      else (values map (v => if (c(v)) "." else " ")).mkString("")
+
+    def qContents: String = (for {
+      (row, rowIndex) <- state.zipWithIndex
+      (cell, colIndex) <- row.zipWithIndex
+      if cellAt(Location(rowIndex, colIndex)).size != 1
+    } yield Location(rowIndex, colIndex) + ": " + cellToString(cellAt(Location(rowIndex, colIndex)))
+      ).mkString("\n")
 
     def row(index: Int) = state(index)
 
@@ -28,6 +52,7 @@ object SuperSudoku {
 
     lazy val size = state.length
     lazy val indices = 0 until size
+    lazy val values = 1 to size
 
     def set(location: Location, value: Int) = withCell(location, Set(value))
 
@@ -51,10 +76,12 @@ object SuperSudoku {
     }
   }
 
-  def freshPuzzle(size: Int): PuzzleState =
-    (for {
-      row <- 1 to size
-    } yield ((1 to size) map (_ => (1 to size).toSet)).toVector).toVector
+  def freshPuzzle(size: Int): PuzzleState = {
+    val values = 1 to size
+    val freshCell: Cell = values.toSet
+    val freshRow: Vector[Cell] = (values map (_ => freshCell)).toVector
+    (values map (_ => freshRow)).toVector
+  }
 
   // heuristic based on a numeric constraint
   def numHeuristic(constraint: NumConstraint): Puzzle => Puzzle = constraint match {
@@ -96,7 +123,7 @@ object SuperSudoku {
       if p.cellAt(Location(row, col)).size > 1
       value <- p.cellAt(Location(row, col))
       if !p.indices.exists(rowIndex => rowIndex != row && p.cellAt(Location(rowIndex, col)).contains(value)) ||
-        !p.indices.exists(colIndex => colIndex != col && p.cellAt(Location(row, colIndex)).contains(value))
+         !p.indices.exists(colIndex => colIndex != col && p.cellAt(Location(row, colIndex)).contains(value))
     } yield (Location(row, col), value)
 
     pigeons.foldLeft(p)((puz: Puzzle, pigeon: (Location, Int)) => pigeon match {

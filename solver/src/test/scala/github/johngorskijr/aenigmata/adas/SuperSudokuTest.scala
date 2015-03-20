@@ -37,6 +37,11 @@ class SuperSudokuTest extends FunSuite {
       ) ::: (sampleLtConstraints map ltHeuristic).toList
     )
 
-    solver.solution
+    // println(solver.solution)
+    solver.steps.foreach(p => println("-----\n" + p))
+  }
+
+  test("solve main") {
+    ???
   }
 }
