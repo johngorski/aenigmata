@@ -194,38 +194,20 @@ class SuperSudokuTest extends FunSuite {
 
     val puzzleE = Puzzle(p7, eNumConstraints, eLtConstraints)
 
-    val identityConstraints = Set(
-      IdentityConstraint(0, Location(5, 4), 1, Location(0, 0)),
-      IdentityConstraint(0, Location(5, 5), 1, Location(0, 1)),
-      IdentityConstraint(0, Location(5, 6), 1, Location(0, 2)),
-      IdentityConstraint(0, Location(6, 4), 1, Location(1, 0)),
-      IdentityConstraint(0, Location(6, 5), 1, Location(1, 1)),
-      IdentityConstraint(0, Location(6, 6), 1, Location(1, 2)),
-      IdentityConstraint(1, Location(0, 4), 2, Location(5, 0)),
-      IdentityConstraint(1, Location(0, 5), 2, Location(5, 1)),
-      IdentityConstraint(1, Location(0, 6), 2, Location(5, 2)),
-      IdentityConstraint(1, Location(1, 4), 2, Location(6, 0)),
-      IdentityConstraint(1, Location(1, 5), 2, Location(6, 1)),
-      IdentityConstraint(1, Location(1, 6), 2, Location(6, 2)),
-      IdentityConstraint(2, Location(5, 4), 3, Location(0, 0)),
-      IdentityConstraint(2, Location(5, 5), 3, Location(0, 1)),
-      IdentityConstraint(2, Location(5, 6), 3, Location(0, 2)),
-      IdentityConstraint(2, Location(6, 4), 3, Location(1, 0)),
-      IdentityConstraint(2, Location(6, 5), 3, Location(1, 1)),
-      IdentityConstraint(2, Location(6, 6), 3, Location(1, 2)),
-      IdentityConstraint(3, Location(0, 4), 4, Location(5, 0)),
-      IdentityConstraint(3, Location(0, 5), 4, Location(5, 1)),
-      IdentityConstraint(3, Location(0, 6), 4, Location(5, 2)),
-      IdentityConstraint(3, Location(1, 4), 4, Location(6, 0)),
-      IdentityConstraint(3, Location(1, 5), 4, Location(6, 1)),
-      IdentityConstraint(3, Location(1, 6), 4, Location(6, 2))
-    )
+    val o = overlapForSize(2, 3)
 
-    val gridConstraints: Iterable[Set[IdentityConstraint]] = identityConstraints.groupBy(constraint => constraint.puzzle1Index).values
-    val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Location.row)).map(_._2)
-    val colConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Location.col)).map(_._2)
+    val identityConstraints: Set[IdentityConstraint] = Set(
+      o(Coordinate(0, Location(5, 4)), Coordinate(1, Location(0, 0))),
+      o(Coordinate(1, Location(0, 4)), Coordinate(2, Location(5, 0))),
+      o(Coordinate(2, Location(5, 4)), Coordinate(3, Location(0, 0))),
+      o(Coordinate(3, Location(0, 4)), Coordinate(4, Location(5, 0)))
+    ).flatMap(overlap => overlap.identityConstraints)
 
-    val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = (rowConstraints ++: colConstraints).map(multiIdConstraint => sharedSpaceHeuristic(extractShared(multiIdConstraint), replaceShared(multiIdConstraint))).toList
+    // val gridConstraints: Iterable[Set[IdentityConstraint]] = identityConstraints.groupBy(constraint => constraint.puzzle1Coordinate.puzzleIndex).values
+    // val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.row)).map(_._2)
+    // val colConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.col)).map(_._2)
+
+    // val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = (rowConstraints ++: colConstraints).map(multiIdConstraint => sharedSpaceHeuristic(extractShared(multiIdConstraint), replaceShared(multiIdConstraint))).toList
 
     val puzzle = CompositePuzzle(Vector(puzzleA, puzzleB, puzzleC, puzzleD, puzzleE), identityConstraints)
 

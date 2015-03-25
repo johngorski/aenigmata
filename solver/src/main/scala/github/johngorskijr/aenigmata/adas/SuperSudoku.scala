@@ -11,6 +11,8 @@ object SuperSudoku {
 
   case class Location(row: Int, col: Int) {
     override def toString = s"($row, $col)"
+
+    def + (that: Location) = Location(this.row + that.row, this.col + that.col)
   }
 
   case class NumConstraint(cells: (Location, Location), requiredDelta: Int)
@@ -174,15 +176,20 @@ object SuperSudoku {
     rowUpdaters ::: colUpdaters
   }
 
-  case class IdentityConstraint(puzzle1Index: Int, puzzle1Location: Location, puzzle2Index: Int, puzzle2Location: Location)
+  case class IdentityConstraint(puzzle1Coordinate: Coordinate, puzzle2Coordinate: Coordinate)
 
-  case class CompositePuzzle(puzzles: Vector[Puzzle], identityConstraints: Set[IdentityConstraint])
+  case class CompositePuzzle(puzzles: Vector[Puzzle], identityConstraints: Set[IdentityConstraint]) {
+    def cellAt(coordinate: Coordinate): Cell = puzzles(coordinate.puzzleIndex).cellAt(coordinate.location)
+
+    def withCell(c: Coordinate, cell: Cell): CompositePuzzle =
+      CompositePuzzle(puzzles.updated(c.puzzleIndex, puzzles(c.puzzleIndex).withCell(c.location, cell)), identityConstraints)
+  }
 
   def identityHeuristic(constraint: IdentityConstraint): CompositePuzzle => CompositePuzzle = {
-    val i1 = constraint.puzzle1Index
-    val i2 = constraint.puzzle2Index
-    val loc1 = constraint.puzzle1Location
-    val loc2 = constraint.puzzle2Location
+    val i1 = constraint.puzzle1Coordinate.puzzleIndex
+    val i2 = constraint.puzzle2Coordinate.puzzleIndex
+    val loc1 = constraint.puzzle1Coordinate.location
+    val loc2 = constraint.puzzle2Coordinate.location
 
     cp: CompositePuzzle => {
       val puzzles = cp.puzzles
@@ -252,15 +259,15 @@ object SuperSudoku {
 
   // TODO: Massive cleanup of numerous shoddy assumptions
   def extractShared(constraints: Set[IdentityConstraint]): CompositePuzzle => SharedSpace = {
-    val leftPuzzleIndex = constraints.last.puzzle1Index
-    val rightPuzzleIndex = constraints.last.puzzle2Index
+    val leftPuzzleIndex = constraints.last.puzzle1Coordinate.puzzleIndex
+    val rightPuzzleIndex = constraints.last.puzzle2Coordinate.puzzleIndex
     // sloppy hard-coding of 3 = rows, 2 = columns
     if (constraints.size == 3) {
-      val leftRowIndex = constraints.last.puzzle1Location.row
-      val leftCols = constraints.map(c => c.puzzle1Location).map(l => l.col)
+      val leftRowIndex = constraints.last.puzzle1Coordinate.location.row
+      val leftCols = constraints.map(c => c.puzzle1Coordinate.location).map(l => l.col)
 
-      val rightRowIndex = constraints.last.puzzle2Location.row
-      val rightCols = constraints.map(c => c.puzzle2Location).map(l => l.col)
+      val rightRowIndex = constraints.last.puzzle2Coordinate.location.row
+      val rightCols = constraints.map(c => c.puzzle2Coordinate.location).map(l => l.col)
 
       cp: CompositePuzzle => {
         val leftPuzzle = cp.puzzles(leftPuzzleIndex)
@@ -276,11 +283,11 @@ object SuperSudoku {
         SharedSpace(leftRow, leftSharedRow, rightRow)
       }
     } else if (constraints.size == 2) {
-      val leftColIndex = constraints.last.puzzle1Location.col
-      val leftRows = constraints.map(c => c.puzzle1Location).map(l => l.row)
+      val leftColIndex = constraints.last.puzzle1Coordinate.location.col
+      val leftRows = constraints.map(c => c.puzzle1Coordinate.location).map(l => l.row)
 
-      val rightColIndex = constraints.last.puzzle2Location.col
-      val rightRows = constraints.map(c => c.puzzle2Location).map(l => l.row)
+      val rightColIndex = constraints.last.puzzle2Coordinate.location.col
+      val rightRows = constraints.map(c => c.puzzle2Coordinate.location).map(l => l.row)
 
       cp: CompositePuzzle => {
         val leftPuzzle = cp.puzzles(leftPuzzleIndex)
@@ -299,8 +306,8 @@ object SuperSudoku {
   }
 
   def replaceShared(constraints: Set[IdentityConstraint]): (CompositePuzzle, SharedSpace) => CompositePuzzle = {
-    val leftPuzzleIndex = constraints.last.puzzle1Index
-    val rightPuzzleIndex = constraints.last.puzzle2Index
+    val leftPuzzleIndex = constraints.last.puzzle1Coordinate.puzzleIndex
+    val rightPuzzleIndex = constraints.last.puzzle2Coordinate.puzzleIndex
 
     (cp: CompositePuzzle, space: SharedSpace) => {
       val leftPuzzle = cp.puzzles(leftPuzzleIndex)
@@ -308,20 +315,20 @@ object SuperSudoku {
 
       // sloppy hard-coding of 3 = rows, 2 = columns
       if (constraints.size == 3) {
-        val leftRowIndex = constraints.last.puzzle1Location.row
+        val leftRowIndex = constraints.last.puzzle1Coordinate.location.row
         val updatedLeftPuzzle: Puzzle = leftPuzzle.withRow(leftRowIndex)(space.left ++: space.shared)
 
-        val rightRowIndex = constraints.last.puzzle2Location.row
+        val rightRowIndex = constraints.last.puzzle2Coordinate.location.row
         val updatedRightPuzzle: Puzzle = rightPuzzle.withRow(rightRowIndex)(space.shared ++: space.right)
 
         CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
           cp.identityConstraints
         )
       } else if (constraints.size == 2) {
-        val leftColIndex = constraints.last.puzzle1Location.col
+        val leftColIndex = constraints.last.puzzle1Coordinate.location.col
         val updatedLeftPuzzle: Puzzle = leftPuzzle.withCol(leftColIndex)(space.left ++: space.shared)
 
-        val rightColIndex = constraints.last.puzzle2Location.col
+        val rightColIndex = constraints.last.puzzle2Coordinate.location.col
         val updatedRightPuzzle: Puzzle = rightPuzzle.withCol(rightColIndex)(space.shared ++: space.right)
 
         CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
@@ -356,12 +363,21 @@ object SuperSudoku {
     SharedSpace(left, original.shared, right)
   }
 
-  case class Coordinate(puzzleIndex: Int, location: Location)
+  case class Coordinate(puzzleIndex: Int, location: Location) {
+    def + (delta: Location) = Coordinate(puzzleIndex, location + delta)
+  }
+
+  def overlapForSize(rows: Int, cols: Int): (Coordinate, Coordinate) => Overlap =
+    (c1: Coordinate, c2: Coordinate) => Overlap(rows, cols, c1, c2)
 
   case class Overlap(rows: Int, cols: Int, topLeftPuzzle1: Coordinate, topLeftPuzzle2: Coordinate) {
-    //def identityConstraints: Set[IdentityConstraint] = (for {
-      //rowCursor <- 0 to rows
-      //colCursor <- 0 to cols
-    //} yield (???).toSet
+    def identityConstraints: Set[IdentityConstraint] = (for {
+      rowCursor <- 0 until rows
+      colCursor <- 0 until cols
+      cursor = Location(rowCursor, colCursor)
+    } yield IdentityConstraint(topLeftPuzzle1 + cursor, topLeftPuzzle2 + cursor)).toSet
+
+    // TODO: Propagators are (extract, replace) pairs of functions for extracting SharedSpaces from CompositePuzzles and
+    // replacing them.
   }
 }
