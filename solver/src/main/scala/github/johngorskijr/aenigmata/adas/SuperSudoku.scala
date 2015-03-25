@@ -233,7 +233,6 @@ object SuperSudoku {
     val onePlyDuals = for {
       rowIndex <- p.indices
       colIndex <- p.indices
-      // if p.state(rowIndex)(colIndex).size == 2
       if p.state(rowIndex)(colIndex).size > 1
       value <- p.state(rowIndex)(colIndex)
     } yield Dual(z => z.set(Location(rowIndex, colIndex), value), z => z.clear(Location(rowIndex, colIndex), value))
@@ -247,5 +246,122 @@ object SuperSudoku {
 
     // the resulting puzzle should not consider those values
     rejectors.foldLeft(p)((z: Puzzle, reject: Puzzle => Puzzle) => reject(z))
+  }
+
+  case class SharedSpace(left: Vector[Cell], shared: Vector[Cell], right: Vector[Cell])
+
+  // TODO: Massive cleanup of numerous shoddy assumptions
+  def extractShared(constraints: Set[IdentityConstraint]): CompositePuzzle => SharedSpace = {
+    val leftPuzzleIndex = constraints.last.puzzle1Index
+    val rightPuzzleIndex = constraints.last.puzzle2Index
+    // sloppy hard-coding of 3 = rows, 2 = columns
+    if (constraints.size == 3) {
+      val leftRowIndex = constraints.last.puzzle1Location.row
+      val leftCols = constraints.map(c => c.puzzle1Location).map(l => l.col)
+
+      val rightRowIndex = constraints.last.puzzle2Location.row
+      val rightCols = constraints.map(c => c.puzzle2Location).map(l => l.col)
+
+      cp: CompositePuzzle => {
+        val leftPuzzle = cp.puzzles(leftPuzzleIndex)
+        val rightPuzzle = cp.puzzles(rightPuzzleIndex)
+
+        val leftPuzzleRow = leftPuzzle.row(leftRowIndex)
+        val leftRow: Vector[Cell] = leftPuzzle.indices.filter(i => i < leftCols.min || i > leftCols.max).map(i => leftPuzzleRow(i)).toVector
+        val leftSharedRow: Vector[Cell] = leftPuzzle.indices.filter(i => i >= leftCols.min && i <= leftCols.max).map(i => leftPuzzleRow(i)).toVector
+
+        val rightPuzzleRow = rightPuzzle.row(rightRowIndex)
+        val rightRow: Vector[Cell] = rightPuzzle.indices.filter(i => i < rightCols.min || i > rightCols.max).map(i => rightPuzzleRow(i)).toVector
+
+        SharedSpace(leftRow, leftSharedRow, rightRow)
+      }
+    } else if (constraints.size == 2) {
+      val leftColIndex = constraints.last.puzzle1Location.col
+      val leftRows = constraints.map(c => c.puzzle1Location).map(l => l.row)
+
+      val rightColIndex = constraints.last.puzzle2Location.col
+      val rightRows = constraints.map(c => c.puzzle2Location).map(l => l.row)
+
+      cp: CompositePuzzle => {
+        val leftPuzzle = cp.puzzles(leftPuzzleIndex)
+        val rightPuzzle = cp.puzzles(rightPuzzleIndex)
+
+        val leftPuzzleCol = leftPuzzle.col(leftColIndex)
+        val leftCol: Vector[Cell] = leftPuzzle.indices.filter(i => i < leftRows.min || i > leftRows.max).map(i => leftPuzzleCol(i)).toVector
+        val leftSharedCol: Vector[Cell] = leftPuzzle.indices.filter(i => i >= leftRows.min && i <= leftRows.max).map(i => leftPuzzleCol(i)).toVector
+
+        val rightPuzzleCol = rightPuzzle.col(rightColIndex)
+        val rightCol: Vector[Cell] = rightPuzzle.indices.filter(i => i < rightRows.min || i > rightRows.max).map(i => rightPuzzleCol(i)).toVector
+
+        SharedSpace(leftCol, leftSharedCol, rightCol)
+      }
+    } else ??? // A sure sign that this code sucks. TODO
+  }
+
+  def replaceShared(constraints: Set[IdentityConstraint]): (CompositePuzzle, SharedSpace) => CompositePuzzle = {
+    val leftPuzzleIndex = constraints.last.puzzle1Index
+    val rightPuzzleIndex = constraints.last.puzzle2Index
+
+    (cp: CompositePuzzle, space: SharedSpace) => {
+      val leftPuzzle = cp.puzzles(leftPuzzleIndex)
+      val rightPuzzle = cp.puzzles(rightPuzzleIndex)
+
+      // sloppy hard-coding of 3 = rows, 2 = columns
+      if (constraints.size == 3) {
+        val leftRowIndex = constraints.last.puzzle1Location.row
+        val updatedLeftPuzzle: Puzzle = leftPuzzle.withRow(leftRowIndex)(space.left ++: space.shared)
+
+        val rightRowIndex = constraints.last.puzzle2Location.row
+        val updatedRightPuzzle: Puzzle = rightPuzzle.withRow(rightRowIndex)(space.shared ++: space.right)
+
+        CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
+          cp.identityConstraints
+        )
+      } else if (constraints.size == 2) {
+        val leftColIndex = constraints.last.puzzle1Location.col
+        val updatedLeftPuzzle: Puzzle = leftPuzzle.withCol(leftColIndex)(space.left ++: space.shared)
+
+        val rightColIndex = constraints.last.puzzle2Location.col
+        val updatedRightPuzzle: Puzzle = rightPuzzle.withCol(rightColIndex)(space.shared ++: space.right)
+
+        CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
+          cp.identityConstraints
+        )
+      } else ??? // A sure sign that this code sucks. TODO
+    }
+  }
+
+  // Hint: If a value must appear within a certain row or column of shared space,
+  //       it must not appear in the linked non-shared rows/columns
+  def sharedSpaceHeuristic(extract: CompositePuzzle => SharedSpace, replace: (CompositePuzzle, SharedSpace) => CompositePuzzle): CompositePuzzle => CompositePuzzle = cp => {
+    val space: SharedSpace = extract(cp)
+    val propagation: SharedSpace = shareSpace(space)
+    if (space == propagation) cp
+    else replace(cp, propagation)
+  }
+
+  def shareSpace(original: SharedSpace): SharedSpace = {
+    val flatLeft = original.left.flatten.toSet
+    val flatRight = original.right.flatten.toSet
+    val sharedOnly = original.shared.flatten.filter(v => !flatLeft(v) || !flatRight(v))
+
+    def resolveLinked(linked: Vector[Cell], toRemove: Int): Vector[Cell] = {
+      linked.map(cell => cell - toRemove)
+    }
+
+    val left = sharedOnly.foldLeft(original.left)(resolveLinked)
+
+    val right = sharedOnly.foldLeft(original.right)(resolveLinked)
+
+    SharedSpace(left, original.shared, right)
+  }
+
+  case class Coordinate(puzzleIndex: Int, location: Location)
+
+  case class Overlap(rows: Int, cols: Int, topLeftPuzzle1: Coordinate, topLeftPuzzle2: Coordinate) {
+    //def identityConstraints: Set[IdentityConstraint] = (for {
+      //rowCursor <- 0 to rows
+      //colCursor <- 0 to cols
+    //} yield (???).toSet
   }
 }

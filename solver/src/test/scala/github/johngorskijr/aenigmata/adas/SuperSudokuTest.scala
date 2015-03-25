@@ -54,6 +54,24 @@ class SuperSudokuTest extends FunSuite {
 
   // TODO: triple triplets heuristic/n n-tuples if needed
 
+  test("shareSpace clear right") {
+    val one: Vector[Cell] = Vector(Set(1))
+    val oneTwo: Vector[Cell] = Vector(Set(1, 2))
+    val two: Vector[Cell] = Vector(Set(2))
+
+    val actual: SharedSpace = shareSpace(SharedSpace(one, oneTwo, oneTwo))
+    assert(actual === SharedSpace(one, oneTwo, one))
+  }
+
+  test("shareSpace clear left") {
+    val one: Vector[Cell] = Vector(Set(1))
+    val oneTwo: Vector[Cell] = Vector(Set(1, 2))
+    val two: Vector[Cell] = Vector(Set(2))
+
+    val actual: SharedSpace = shareSpace(SharedSpace(oneTwo, oneTwo, one))
+    assert(actual === SharedSpace(one, oneTwo, one))
+  }
+
   test("solve main") {
     val p7 = freshPuzzle(7)
 
@@ -203,9 +221,15 @@ class SuperSudokuTest extends FunSuite {
       IdentityConstraint(3, Location(1, 6), 4, Location(6, 2))
     )
 
+    val gridConstraints: Iterable[Set[IdentityConstraint]] = identityConstraints.groupBy(constraint => constraint.puzzle1Index).values
+    val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Location.row)).map(_._2)
+    val colConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Location.col)).map(_._2)
+
+    val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = (rowConstraints ++: colConstraints).map(multiIdConstraint => sharedSpaceHeuristic(extractShared(multiIdConstraint), replaceShared(multiIdConstraint))).toList
+
     val puzzle = CompositePuzzle(Vector(puzzleA, puzzleB, puzzleC, puzzleD, puzzleE), identityConstraints)
 
-    val solver = new Solver[CompositePuzzle](puzzle, subPuzzleHeuristic :: (identityConstraints map identityHeuristic).toList)
+    val solver = new Solver[CompositePuzzle](puzzle, subPuzzleHeuristic :: (identityConstraints map identityHeuristic).toList) // ::: sharedSpaceHeuristics)
 
     println(solver.solution)
   }
