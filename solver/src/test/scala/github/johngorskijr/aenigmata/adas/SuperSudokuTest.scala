@@ -196,12 +196,14 @@ class SuperSudokuTest extends FunSuite {
 
     val o = overlapForSize(2, 3)
 
-    val identityConstraints: Set[IdentityConstraint] = Set(
+    val overlaps: Set[Overlap] = Set(
       o(Coordinate(0, Location(5, 4)), Coordinate(1, Location(0, 0))),
       o(Coordinate(1, Location(0, 4)), Coordinate(2, Location(5, 0))),
       o(Coordinate(2, Location(5, 4)), Coordinate(3, Location(0, 0))),
       o(Coordinate(3, Location(0, 4)), Coordinate(4, Location(5, 0)))
-    ).flatMap(overlap => overlap.identityConstraints)
+    )
+
+    val identityConstraints: Set[IdentityConstraint] = overlaps.flatMap(overlap => overlap.identityConstraints)
 
     // val gridConstraints: Iterable[Set[IdentityConstraint]] = identityConstraints.groupBy(constraint => constraint.puzzle1Coordinate.puzzleIndex).values
     // val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.row)).map(_._2)
@@ -209,9 +211,11 @@ class SuperSudokuTest extends FunSuite {
 
     // val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = (rowConstraints ++: colConstraints).map(multiIdConstraint => sharedSpaceHeuristic(extractShared(multiIdConstraint), replaceShared(multiIdConstraint))).toList
 
+    val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = overlaps.flatMap(overlapPropagationHeuristics).toList
+
     val puzzle = CompositePuzzle(Vector(puzzleA, puzzleB, puzzleC, puzzleD, puzzleE), identityConstraints)
 
-    val solver = new Solver[CompositePuzzle](puzzle, subPuzzleHeuristic :: (identityConstraints map identityHeuristic).toList) // ::: sharedSpaceHeuristics)
+    val solver = new Solver[CompositePuzzle](puzzle, subPuzzleHeuristic :: (identityConstraints map identityHeuristic).toList ::: sharedSpaceHeuristics)
 
     println(solver.solution)
   }

@@ -353,6 +353,12 @@ object SuperSudoku {
     else replace(cp, propagation)
   }
 
+  def overlapPropagationHeuristics(overlap: Overlap): List[CompositePuzzle => CompositePuzzle] = {
+    overlap.propagators.map(p => {
+      sharedSpaceHeuristic(p.extract, p.replace)
+    }).toList
+  }
+
   def shareSpace(original: SharedSpace): SharedSpace = {
     val flatLeft = original.left.flatten.toSet
     val flatRight = original.right.flatten.toSet
