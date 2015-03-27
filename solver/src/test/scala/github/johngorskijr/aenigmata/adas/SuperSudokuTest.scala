@@ -209,8 +209,6 @@ class SuperSudokuTest extends FunSuite {
     // val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.row)).map(_._2)
     // val colConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.col)).map(_._2)
 
-    // val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = (rowConstraints ++: colConstraints).map(multiIdConstraint => sharedSpaceHeuristic(extractShared(multiIdConstraint), replaceShared(multiIdConstraint))).toList
-
     val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = overlaps.flatMap(overlapPropagationHeuristics).toList
 
     val puzzle = CompositePuzzle(Vector(puzzleA, puzzleB, puzzleC, puzzleD, puzzleE), identityConstraints)

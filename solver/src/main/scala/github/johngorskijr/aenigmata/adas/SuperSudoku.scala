@@ -263,87 +263,6 @@ object SuperSudoku {
     def rightPuzzleRow: Vector[Cell] = shared ++: right
   }
 
-  // TODO: Massive cleanup of numerous shoddy assumptions
-  def extractShared(constraints: Set[IdentityConstraint]): CompositePuzzle => SharedSpace = {
-    val leftPuzzleIndex = constraints.last.puzzle1Coordinate.puzzleIndex
-    val rightPuzzleIndex = constraints.last.puzzle2Coordinate.puzzleIndex
-    // sloppy hard-coding of 3 = rows, 2 = columns
-    if (constraints.size == 3) {
-      val leftRowIndex = constraints.last.puzzle1Coordinate.location.row
-      val leftCols = constraints.map(c => c.puzzle1Coordinate.location).map(l => l.col)
-
-      val rightRowIndex = constraints.last.puzzle2Coordinate.location.row
-      val rightCols = constraints.map(c => c.puzzle2Coordinate.location).map(l => l.col)
-
-      cp: CompositePuzzle => {
-        val leftPuzzle = cp.puzzles(leftPuzzleIndex)
-        val rightPuzzle = cp.puzzles(rightPuzzleIndex)
-
-        val leftPuzzleRow = leftPuzzle.row(leftRowIndex)
-        val leftRow: Vector[Cell] = leftPuzzle.indices.filter(i => i < leftCols.min || i > leftCols.max).map(i => leftPuzzleRow(i)).toVector
-        val leftSharedRow: Vector[Cell] = leftPuzzle.indices.filter(i => i >= leftCols.min && i <= leftCols.max).map(i => leftPuzzleRow(i)).toVector
-
-        val rightPuzzleRow = rightPuzzle.row(rightRowIndex)
-        val rightRow: Vector[Cell] = rightPuzzle.indices.filter(i => i < rightCols.min || i > rightCols.max).map(i => rightPuzzleRow(i)).toVector
-
-        SharedSpace(leftRow, leftSharedRow, rightRow)
-      }
-    } else if (constraints.size == 2) {
-      val leftColIndex = constraints.last.puzzle1Coordinate.location.col
-      val leftRows = constraints.map(c => c.puzzle1Coordinate.location).map(l => l.row)
-
-      val rightColIndex = constraints.last.puzzle2Coordinate.location.col
-      val rightRows = constraints.map(c => c.puzzle2Coordinate.location).map(l => l.row)
-
-      cp: CompositePuzzle => {
-        val leftPuzzle = cp.puzzles(leftPuzzleIndex)
-        val rightPuzzle = cp.puzzles(rightPuzzleIndex)
-
-        val leftPuzzleCol = leftPuzzle.col(leftColIndex)
-        val leftCol: Vector[Cell] = leftPuzzle.indices.filter(i => i < leftRows.min || i > leftRows.max).map(i => leftPuzzleCol(i)).toVector
-        val leftSharedCol: Vector[Cell] = leftPuzzle.indices.filter(i => i >= leftRows.min && i <= leftRows.max).map(i => leftPuzzleCol(i)).toVector
-
-        val rightPuzzleCol = rightPuzzle.col(rightColIndex)
-        val rightCol: Vector[Cell] = rightPuzzle.indices.filter(i => i < rightRows.min || i > rightRows.max).map(i => rightPuzzleCol(i)).toVector
-
-        SharedSpace(leftCol, leftSharedCol, rightCol)
-      }
-    } else ??? // A sure sign that this code sucks. TODO
-  }
-
-  def replaceShared(constraints: Set[IdentityConstraint]): (CompositePuzzle, SharedSpace) => CompositePuzzle = {
-    val leftPuzzleIndex = constraints.last.puzzle1Coordinate.puzzleIndex
-    val rightPuzzleIndex = constraints.last.puzzle2Coordinate.puzzleIndex
-
-    (cp: CompositePuzzle, space: SharedSpace) => {
-      val leftPuzzle = cp.puzzles(leftPuzzleIndex)
-      val rightPuzzle = cp.puzzles(rightPuzzleIndex)
-
-      // sloppy hard-coding of 3 = rows, 2 = columns
-      if (constraints.size == 3) {
-        val leftRowIndex = constraints.last.puzzle1Coordinate.location.row
-        val updatedLeftPuzzle: Puzzle = leftPuzzle.withRow(leftRowIndex)(space.left ++: space.shared)
-
-        val rightRowIndex = constraints.last.puzzle2Coordinate.location.row
-        val updatedRightPuzzle: Puzzle = rightPuzzle.withRow(rightRowIndex)(space.shared ++: space.right)
-
-        CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
-          cp.identityConstraints
-        )
-      } else if (constraints.size == 2) {
-        val leftColIndex = constraints.last.puzzle1Coordinate.location.col
-        val updatedLeftPuzzle: Puzzle = leftPuzzle.withCol(leftColIndex)(space.left ++: space.shared)
-
-        val rightColIndex = constraints.last.puzzle2Coordinate.location.col
-        val updatedRightPuzzle: Puzzle = rightPuzzle.withCol(rightColIndex)(space.shared ++: space.right)
-
-        CompositePuzzle(cp.puzzles.updated(leftPuzzleIndex, updatedLeftPuzzle).updated(rightPuzzleIndex, updatedRightPuzzle),
-          cp.identityConstraints
-        )
-      } else ??? // A sure sign that this code sucks. TODO
-    }
-  }
-
   // Hint: If a value must appear within a certain row or column of shared space,
   //       it must not appear in the linked non-shared rows/columns
   def sharedSpaceHeuristic(extract: CompositePuzzle => SharedSpace, replace: (CompositePuzzle, SharedSpace) => CompositePuzzle): CompositePuzzle => CompositePuzzle = cp => {
@@ -354,23 +273,24 @@ object SuperSudoku {
   }
 
   def overlapPropagationHeuristics(overlap: Overlap): List[CompositePuzzle => CompositePuzzle] = {
-    overlap.propagators.map(p => {
+    overlap.rowPropagators.map(p => {
       sharedSpaceHeuristic(p.extract, p.replace)
     }).toList
   }
 
   def shareSpace(original: SharedSpace): SharedSpace = {
-    val flatLeft = original.left.flatten.toSet
-    val flatRight = original.right.flatten.toSet
-    val sharedOnly = original.shared.flatten.filter(v => !flatLeft(v) || !flatRight(v))
+    val flatLeft: Cell = original.left.flatten.toSet
+    val flatRight: Cell = original.right.flatten.toSet
+    val flatShared: Cell = original.shared.flatten.toSet
+    val mustBeInSharedSpace: Cell = flatShared.filter(v => !flatLeft(v) || !flatRight(v))
 
-    def resolveLinked(linked: Vector[Cell], toRemove: Int): Vector[Cell] = {
+    def removeSharedOnlyValue(linked: Vector[Cell], toRemove: Int): Vector[Cell] = {
       linked.map(cell => cell - toRemove)
     }
 
-    val left = sharedOnly.foldLeft(original.left)(resolveLinked)
+    val left: Vector[Cell] = mustBeInSharedSpace.foldLeft(original.left)(removeSharedOnlyValue)
 
-    val right = sharedOnly.foldLeft(original.right)(resolveLinked)
+    val right: Vector[Cell] = mustBeInSharedSpace.foldLeft(original.right)(removeSharedOnlyValue)
 
     SharedSpace(left, original.shared, right)
   }
@@ -402,7 +322,7 @@ object SuperSudoku {
       *
       * TODO: This inelegance would probably disappear if we give each subpuzzle a global grid origin.
       */
-    def propagators: Set[Propagator] = rowPropagators ++: colPropagators
+    def propagators: Set[Propagator] = rowPropagators ++ colPropagators
 
     def rowPropagators: Set[Propagator] = {
       val propagators = for {
