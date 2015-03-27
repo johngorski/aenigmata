@@ -182,7 +182,10 @@ object SuperSudoku {
     def cellAt(coordinate: Coordinate): Cell = puzzles(coordinate.puzzleIndex).cellAt(coordinate.location)
 
     def withCell(c: Coordinate, cell: Cell): CompositePuzzle =
-      CompositePuzzle(puzzles.updated(c.puzzleIndex, puzzles(c.puzzleIndex).withCell(c.location, cell)), identityConstraints)
+      withPuzzle(c.puzzleIndex, puzzles(c.puzzleIndex).withCell(c.location, cell))
+
+    def withPuzzle(index: Int, puzzle: Puzzle) =
+      CompositePuzzle(puzzles.updated(index, puzzle), identityConstraints)
   }
 
   def identityHeuristic(constraint: IdentityConstraint): CompositePuzzle => CompositePuzzle = {
@@ -219,7 +222,7 @@ object SuperSudoku {
    * @param speculate gives the speculative form of a puzzle
    * @param reject gives the form of the puzzle if the speculation must be rejected
    */
-  case class Dual(speculate: Puzzle => Puzzle, reject: Puzzle => Puzzle)
+  case class Speculator(speculate: Puzzle => Puzzle, reject: Puzzle => Puzzle)
 
   def contradiction(p: Puzzle): Boolean = p.state.flatten.exists(cell => cell.size < 1)
 
@@ -237,16 +240,16 @@ object SuperSudoku {
   // IMPORTANT: Don't include the contradiction heuristic when checking the feasibility of a contradiction heuristic!
   def contradictionHeuristic(hs: List[Puzzle => Puzzle]): Puzzle => Puzzle = p => {
     // Out of the possible pairs of speculation duals and resulting solved puzzle states based on given heuristics,
-    val onePlyDuals = for {
+    val singlePlySpeculators = for {
       rowIndex <- p.indices
       colIndex <- p.indices
       if p.state(rowIndex)(colIndex).size > 1
       value <- p.state(rowIndex)(colIndex)
-    } yield Dual(z => z.set(Location(rowIndex, colIndex), value), z => z.clear(Location(rowIndex, colIndex), value))
+    } yield Speculator(z => z.set(Location(rowIndex, colIndex), value), z => z.clear(Location(rowIndex, colIndex), value))
 
     // for the resulting states which are contradictory,
     val rejectors = for {
-      dual <- onePlyDuals
+      dual <- singlePlySpeculators
       hypothetical = dual.speculate(p)
       if hypotheticalFails(hypothetical, hs)
     } yield dual.reject
@@ -255,7 +258,10 @@ object SuperSudoku {
     rejectors.foldLeft(p)((z: Puzzle, reject: Puzzle => Puzzle) => reject(z))
   }
 
-  case class SharedSpace(left: Vector[Cell], shared: Vector[Cell], right: Vector[Cell])
+  case class SharedSpace(left: Vector[Cell], shared: Vector[Cell], right: Vector[Cell]) {
+    def leftPuzzleRow: Vector[Cell] = left ++: shared
+    def rightPuzzleRow: Vector[Cell] = shared ++: right
+  }
 
   // TODO: Massive cleanup of numerous shoddy assumptions
   def extractShared(constraints: Set[IdentityConstraint]): CompositePuzzle => SharedSpace = {
@@ -377,7 +383,91 @@ object SuperSudoku {
       cursor = Location(rowCursor, colCursor)
     } yield IdentityConstraint(topLeftPuzzle1 + cursor, topLeftPuzzle2 + cursor)).toSet
 
-    // TODO: Propagators are (extract, replace) pairs of functions for extracting SharedSpaces from CompositePuzzles and
-    // replacing them.
+    /** Propagators are (extract, replace) pairs of functions for extracting SharedSpaces from CompositePuzzles and
+      * replacing them.
+      *
+      * We can get propagators by choosing puzzles as Left and Right, identifying the Shared overlap,
+      * and then computing based on their intersection and disjunction.
+      * This is still makes the inelegant assumption that the Overlaps make sense given the starting
+      * locations in each puzzle.
+      *
+      * There is a further inelegant assumption that row shared spaces have left = less than puzzle index and
+      * column shared spaces have left (top) = even puzzle index.
+      *
+      * TODO: This inelegance would probably disappear if we give each subpuzzle a global grid origin.
+      */
+    def propagators: Set[Propagator] = rowPropagators ++: colPropagators
+
+    def rowPropagators: Set[Propagator] = {
+      val propagators = for {
+        rowCursor <- 0 until rows
+      } yield Propagator((cp: CompositePuzzle) => {
+          // Assumption is that lower puzzle index comes first and that this maps to puzzles left of
+          // the other.
+          // TODO: Encode this explicitly rather than torturing brain cells.
+          val leftPuzzle: Puzzle = cp.puzzles(topLeftPuzzle1.puzzleIndex)
+          val leftRow: Vector[Cell] = leftPuzzle.row(topLeftPuzzle1.location.row + rowCursor)
+
+          val left: Vector[Cell] = leftRow.take(leftRow.size - cols)
+          val shared: Vector[Cell] = leftRow.takeRight(cols)
+
+          val rightPuzzle: Puzzle = cp.puzzles(topLeftPuzzle2.puzzleIndex)
+          val rightRow: Vector[Cell] = rightPuzzle.row(topLeftPuzzle2.location.row + rowCursor)
+
+          val right: Vector[Cell] = rightRow.slice(cols, rightRow.size)
+
+          SharedSpace(left, shared, right)
+        }, (cp: CompositePuzzle, space: SharedSpace) => {
+          val leftPuzzle: Puzzle = cp.puzzles(topLeftPuzzle1.puzzleIndex).withRow(topLeftPuzzle1.location.row + rowCursor)(space.leftPuzzleRow)
+          val rightPuzzle: Puzzle = cp.puzzles(topLeftPuzzle2.puzzleIndex).withRow(topLeftPuzzle2.location.row + rowCursor)(space.rightPuzzleRow)
+          cp.withPuzzle(topLeftPuzzle1.puzzleIndex, leftPuzzle).withPuzzle(topLeftPuzzle2.puzzleIndex, rightPuzzle)
+        })
+      propagators.toSet
+    }
+
+    def colPropagators: Set[Propagator] = {
+      val propagators = for {
+        colCursor <- 0 until cols
+      } yield Propagator((cp: CompositePuzzle) => {
+          // Assumption is that even puzzle indices are "left" (above) odd puzzle indices.
+          val leftCoordinate: Coordinate =
+            if (topLeftPuzzle1.puzzleIndex % 2 == 0) topLeftPuzzle1
+            else topLeftPuzzle2
+
+          val rightCoordinate: Coordinate =
+            if (topLeftPuzzle1.puzzleIndex % 2 == 0) topLeftPuzzle2
+            else topLeftPuzzle1
+
+          val leftPuzzle: Puzzle = cp.puzzles(leftCoordinate.puzzleIndex)
+          val leftCol: Vector[Cell] = leftPuzzle.col(leftCoordinate.location.col + colCursor)
+
+          val left: Vector[Cell] = leftCol.take(leftCol.size - rows)
+          val shared: Vector[Cell] = leftCol.takeRight(rows)
+
+          val rightPuzzle: Puzzle = cp.puzzles(rightCoordinate.puzzleIndex)
+          val rightCol: Vector[Cell] = rightPuzzle.col(rightCoordinate.location.col + colCursor)
+
+          val right: Vector[Cell] = rightCol.slice(rows, rightCol.size)
+
+          SharedSpace(left, shared, right)
+        }, (cp: CompositePuzzle, space: SharedSpace) => {
+          // Assumption is that even puzzle indices are "left" (above) odd puzzle indices.
+          val leftCoordinate: Coordinate =
+            if (topLeftPuzzle1.puzzleIndex % 2 == 0) topLeftPuzzle1
+            else topLeftPuzzle2
+
+          val rightCoordinate: Coordinate =
+            if (topLeftPuzzle1.puzzleIndex % 2 == 0) topLeftPuzzle2
+            else topLeftPuzzle1
+
+          val leftPuzzle: Puzzle = cp.puzzles(leftCoordinate.puzzleIndex).withCol(leftCoordinate.location.col + colCursor)(space.leftPuzzleRow)
+          val rightPuzzle: Puzzle = cp.puzzles(rightCoordinate.puzzleIndex).withCol(rightCoordinate.location.col + colCursor)(space.rightPuzzleRow)
+          cp.withPuzzle(topLeftPuzzle1.puzzleIndex, leftPuzzle).withPuzzle(topLeftPuzzle2.puzzleIndex, rightPuzzle)
+      })
+
+      propagators.toSet
+    }
   }
+
+  case class Propagator(extract: CompositePuzzle => SharedSpace, replace: (CompositePuzzle, SharedSpace) => CompositePuzzle)
 }
