@@ -41,6 +41,42 @@ class SuperSudokuTest extends FunSuite {
     // solver.steps.foreach(p => println("-----\n" + p))
   }
 
+  test("letter translation") {
+    assert(charOf(1) === 'a')
+    assert(charOf(15) === 'o')
+    assert(charOf(26) === 'z')
+  }
+
+  test("final clue") {
+    val values = List(
+      2 + 5 + 3 + 4,
+      5 + 1 + 2 + 7,
+      6 + 2 + 7 + 4 + 1,
+      1 + 4,
+      4 + 2 + 1,
+      2 + 1,
+      4 + 6 + 1 + 4,
+      4 + 6 + 3 + 7 + 2,
+      2 + 3,
+      4 + 2 + 3 + 6 + 2 + 1,
+      1 + 4,
+      4,
+      5 + 1 + 4 + 5 + 1 + 3,
+      6 + 2 + 5 + 1 + 7,
+      1 + 2,
+      3 + 5,
+      2 + 5 + 6 + 1,
+      5 + 3 + 6 + 2 + 5,
+      3 + 2 + 7 + 1,
+      2,
+      2 + 3,
+      5 + 1 + 6 + 4 + 2,
+      4 + 6 + 2 + 7
+    )
+
+    println((values map charOf).mkString)
+  }
+
   test("updateRay normalizes double pair") {
     val pair    = Set(   2,          6)
     val removed = Set(1,    3, 4, 5,    7)
