@@ -205,10 +205,6 @@ class SuperSudokuTest extends FunSuite {
 
     val identityConstraints: Set[IdentityConstraint] = overlaps.flatMap(overlap => overlap.identityConstraints)
 
-    // val gridConstraints: Iterable[Set[IdentityConstraint]] = identityConstraints.groupBy(constraint => constraint.puzzle1Coordinate.puzzleIndex).values
-    // val rowConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.row)).map(_._2)
-    // val colConstraints = gridConstraints.flatMap(gridConstraint => gridConstraint.groupBy(constraint => constraint.puzzle1Coordinate.location.col)).map(_._2)
-
     val sharedSpaceHeuristics: List[CompositePuzzle => CompositePuzzle] = overlaps.flatMap(overlapPropagationHeuristics).toList
 
     val puzzle = CompositePuzzle(Vector(puzzleA, puzzleB, puzzleC, puzzleD, puzzleE), identityConstraints)
