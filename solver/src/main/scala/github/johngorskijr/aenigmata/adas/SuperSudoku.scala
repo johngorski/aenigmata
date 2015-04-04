@@ -396,6 +396,4 @@ object SuperSudoku {
   }
 
   case class Propagator(extract: CompositePuzzle => SharedSpace, replace: (CompositePuzzle, SharedSpace) => CompositePuzzle)
-
-  lazy val charOf: Map[Int, Char] = ((1 to 26) zip ('a' to 'z')) toMap
 }

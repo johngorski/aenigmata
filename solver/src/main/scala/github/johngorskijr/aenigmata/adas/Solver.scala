@@ -70,3 +70,10 @@ class Solver[Puzzle](puzzle: Puzzle, heuristics: List[(Puzzle => Puzzle)]) {
    */
   lazy val solution = apply(puzzle, p => applyAll(p, heuristics))
 }
+
+object Util {
+  lazy val charOf: Map[Int, Char] = ((1 to 26) zip ('a' to 'z')).toMap.updated(0, 'z')
+  def numOf(c: Char): Int = c.toLower - 'a' + 1
+
+  def advanceChar(c: Char, n: Int): Char = charOf((c.toLower - 'a' + n) % 26 + numOf('a'))
+}
