@@ -76,4 +76,16 @@ object Util {
   def numOf(c: Char): Int = c.toLower - 'a' + 1
 
   def advanceChar(c: Char, n: Int): Char = charOf((c.toLower - 'a' + n) % 26 + numOf('a'))
+
+  def runningTotal(input: List[Int]): List[Int] = {
+    def runningTotal(input: List[Int], total: Int, accumulator: List[Int]): List[Int] = input match {
+      case List() => accumulator.reverse
+      case head :: tail => {
+        val sum = head + total
+        runningTotal(tail, sum, sum :: accumulator)
+      }
+    }
+
+    runningTotal(input, 0, List())
+  }
 }

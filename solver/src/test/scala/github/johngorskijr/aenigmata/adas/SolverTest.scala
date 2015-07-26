@@ -59,4 +59,16 @@ class SolverTest extends FunSuite {
       case (c: Char, n: Int) => advanceChar(c, n)
     }.mkString === "walltokeepoutthescots")
   }
+
+  test("puzzle 21 path") {
+    def translate21(letters: String, numbers: List[Int]): String = letters
+      .zip(runningTotal(numbers).map(_ % 10))
+      .map { case (c: Char, i: Int) => advanceChar(c, i) }
+      .mkString
+
+    val allLetters = "rcxmgifsvnrogryaqapxgnzzavbytyqczqite"
+    val allNumbers = "2323234242342323243232323232323243232".toCharArray.toList.map(_.toInt - '0'.toInt)
+
+    assert(translate21(allLetters, allNumbers) === "theminotaursmazewasconceivedbythisman")
+  }
 }
