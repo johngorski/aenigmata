@@ -1,5 +1,7 @@
 package github.johngorskijr.aenigmata.adas
 
+import github.johngorskijr.aenigmata.adas.Util.Location
+
 import scala.util.{Failure, Success, Try}
 
 object SuperSudoku {
@@ -8,12 +10,6 @@ object SuperSudoku {
   def printable: Cell => String = cell => if (cell.size != 1) "?" else cell.last.toString
 
   type PuzzleState = Vector[Vector[Cell]]
-
-  case class Location(row: Int, col: Int) {
-    override def toString = s"($row, $col)"
-
-    def + (that: Location) = Location(this.row + that.row, this.col + that.col)
-  }
 
   case class NumConstraint(cells: (Location, Location), requiredDelta: Int)
   case class LtConstraint(lesserCell: Location, greaterCell: Location)

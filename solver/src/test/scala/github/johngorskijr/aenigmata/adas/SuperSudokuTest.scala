@@ -1,5 +1,6 @@
 package github.johngorskijr.aenigmata.adas
 
+import github.johngorskijr.aenigmata.adas.Util.Location
 import org.scalatest.FunSuite
 
 import org.junit.runner.RunWith

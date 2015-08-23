@@ -88,4 +88,10 @@ object Util {
 
     runningTotal(input, 0, List())
   }
+
+  case class Location(row: Int, col: Int) {
+    override def toString = s"($row, $col)"
+
+    def + (that: Location) = Location(this.row + that.row, this.col + that.col)
+  }
 }
