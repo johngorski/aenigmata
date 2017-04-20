@@ -11,12 +11,26 @@
         <script type="text/javascript" src="solve.js"></script>
         <script type="text/javascript">
             "use strict";
+            var puzzleCanvas = document.getElementById("puzzle");
+
+            // when the canvas is clicked, the puzzle may change.
+
+            // puzzleCanvas.addEventListener("click", puzzleClick);
+            puzzleCanvas.addEventListener("click", function(e) {
+                puzzleClickEvents({
+                    x: e.x - puzzleCanvas.offsetLeft,
+                    y: e.y - puzzleCanvas.offsetTop
+                });
+            });
+
+            // when the puzzle changes, we redraw.
+            // define puzzle
+
             var refresh = function() {
                 applyHeuristics(heuristics);
                 drawSketches(cells, sketches);
+                draw(puzzleCanvas.getContext("2d"));
             };
-
-            document.getElementById("puzzle").addEventListener("click", puzzleClick);
 
             refresh();
         </script>

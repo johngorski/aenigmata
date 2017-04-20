@@ -39,14 +39,6 @@ var cellClickEvents = function(coordinates) {
     ].forEach(function(f) { f(coordinates); });
 };
 
-var puzzleClick = function(e) {
-    var location = {
-        x: e.x - this.offsetLeft,
-        y: e.y - this.offsetTop
-    };
-    puzzleClickEvents(location);
-};
-
 var eachCell = function(f) {
     var i, j;
     for (i = 0; i < cells.length; i += 1) {
@@ -56,7 +48,82 @@ var eachCell = function(f) {
     }
 };
 
-var initializeCells = function(cells) {
+var verticalEdges = [
+    "|2F22EB22S||2X2DP2GP2|",
+    "|2Z2PQD133L13S231L22Y|",
+    "|L3K12SOLDYBY3MDGE32M|",
+    "|2FY3J13U3C3Q32CCERX2|",
+    "|K22T3HS2N2D2NSPWHO3B|",
+    "|C3P1M222D2UBZN1OQJ1J|",
+    "|MM2C3SFBD3B232BZ1R33|",
+    "|3Y1J2J13QYI3X2IS32IL|",
+    "|2KQ32R21J1YM3WP2BO22|",
+    "|1D3TPKCP2F2ZOWBA3M23|",
+    "|HPR112Q2SRZ2S312BGGZ|",
+    "|2FGQPGAR3||KXUNS3T3D|"
+];
+
+var drawVerticalEdges = function(ves) {
+    return function(context) {
+        var row, col, left, ceiling, floor;
+        for (row = 0; row < ves.length; row += 1) {
+            for (col = 0; col < ves[0].length; col += 1) {
+                if (ves[row][col] === '|') {
+                    left = 0.5 + col * CELL_DIMENSIONS.width;
+                    ceiling = 0.5 + row * CELL_DIMENSIONS.height;
+                    floor = ceiling + CELL_DIMENSIONS.height;
+                    context.beginPath();
+                    context.setLineDash([1]);
+                    context.lineWidth = 4;
+                    context.strokeStyle = "#000000";
+                    context.moveTo(left, ceiling);
+                    context.lineTo(left, floor);
+                    context.stroke();
+                }
+            }
+        }
+    }
+};
+
+var horizontalEdges = [
+    "---------- ----------",
+    "22Z2PQD133-13S231L22Y",
+    "BL3K12SOLDYBY3MDGE32M",
+    "32FY3J13U3C3Q32CCERX2",
+    "2K22T3HS2N2D2NSPWHO3B",
+    "XC3P1M222D2UBZN1OQJ1J",
+    "AMM2C3SFBD3B232BZ1R33",
+    "23Y1J2J13QYI3X2IS32IL",
+    "32KQ32R21J1YM3WP2BO22",
+    "C1D3TPKCP2F2ZOWBA3M23",
+    "CHPR112Q2SRZ2S312BGGZ",
+    "32FGQPGAR3-2KXUNS3T3D",
+    "---------- ----------"
+];
+
+var drawHorizontalEdges = function(hes) {
+    return function(context) {
+        var row, col, left, right, ceiling;
+        for (row = 0; row < hes.length; row += 1) {
+            for (col = 0; col < hes[0].length; col += 1) {
+                if (hes[row][col] === '-') {
+                    left = 0.5 + col * CELL_DIMENSIONS.width;
+                    right = left + CELL_DIMENSIONS.width;
+                    ceiling = 0.5 + row * CELL_DIMENSIONS.height;
+                    context.setLineDash([1]);
+                    context.lineWidth = 4;
+                    context.strokeStyle = "#000000";
+                    context.beginPath();
+                    context.moveTo(left, ceiling);
+                    context.lineTo(right, ceiling);
+                    context.stroke();
+                }
+            }
+        }
+    };
+};
+
+var initialCells = function(cells) {
     var characters = [
         "22F22EB22S 32X2DP2GP2",
         "22Z2PQD133L13S231L22Y",
@@ -129,17 +196,6 @@ var countCellDegree = function(cells) {
         }
         cell.degree = degree;
     });
-};
-
-var drawEdge = function(context, center, cell) {
-    var leftEdge = center.x - CELL_DIMENSIONS.width / 2;
-    var rightEdge = leftEdge + CELL_DIMENSIONS.width;
-    var topEdge = center.y - CELL_DIMENSIONS.height / 2;
-    var bottomEdge = topEdge + CELL_DIMENSIONS.height;
-
-    context.strokeStyle = "#aaa";
-    context.rect(leftEdge + 1, topEdge + 1, CELL_DIMENSIONS.width, CELL_DIMENSIONS.height);
-    context.stroke();
 };
 
 var drawCharacter = function(context, center, cell) {
@@ -340,7 +396,7 @@ var markPathWhenDegree2CellsContainPath = function(cells) {
 var drawPath = function(context, center, cell) {
     var w = CELL_DIMENSIONS.width / 2;
     var h = CELL_DIMENSIONS.height / 2;
-    var centerTo = function(x, y) { "use strict"
+    var centerTo = function(x, y) {
         context.moveTo(center.x, center.y);
         context.lineTo(x, y);
     };
@@ -367,12 +423,7 @@ var drawPath = function(context, center, cell) {
 var cells = [];
 
 var heuristics = [
-    initializeCells,
-    findCellsExcludedFromPath,
-    findPossiblePaths,
-    markPathCellsFromExhaustedShade,
-    countCellDegree,
-    markPathWhenDegree2CellsContainPath
+    initialCells
 ];
 
 var applyHeuristics = function(heuristics) {
@@ -386,30 +437,80 @@ var applyHeuristics = function(heuristics) {
 };
 
 var sketches = [
-    drawEdge,
-    drawDirection,
-    drawCharacter,
-    drawUpPossible, drawDownPossible, drawLeftPossible, drawRightPossible,
-    drawContainsPath,
-    drawPath
 ];
 var context = puzzle.getContext("2d");
 var canvas = document.getElementById("puzzle");
 
 var drawSketches = function(cells, sketches) {
-    var i, j;
-    // Extra pixel for pixel offsets
-    canvas.width = cells[0].length * CELL_DIMENSIONS.width + 1;
-    canvas.height = cells.length * CELL_DIMENSIONS.height + 1;
-    sketches.forEach(function(sketch) {
-        for (i = 0; i < cells.length; i += 1) {
-            for (j = 0; j < cells[0].length; j += 1) {
-                try {
-                    sketch(context, cellCenter(i, j), cells[i][j]);
-                } catch (e) {
-                    // Don't let failed past sketches stop future sketches
+};
+
+var characters = [
+    "22F22EB22S 32X2DP2GP2",
+    "22Z2PQD133L13S231L22Y",
+    "BL3K12SOLDYBY3MDGE32M",
+    "32FY3J13U3C3Q32CCERX2",
+    "2K22T3HS2N2D2NSPWHO3B",
+    "XC3P1M222D2UBZN1OQJ1J",
+    "AMM2C3SFBD3B232BZ1R33",
+    "23Y1J2J13QYI3X2IS32IL",
+    "32KQ32R21J1YM3WP2BO22",
+    "C1D3TPKCP2F2ZOWBA3M23",
+    "CHPR112Q2SRZ2S312BGGZ",
+    "32FGQPGAR3 2KXUNS3T3D"
+];
+
+var drawCells = function(chars) {
+    return function(context) {
+        var r, c, center;
+        context.font = "24px sans-serif";
+        context.textBaseline = "middle";
+        context.textAlign = "center";
+        context.fillStyle = '#000';
+
+        for (r = 0; r < chars.length; r += 1) {
+            for (c = 0; c < chars[0].length; c += 1) {
+                if (chars[r][c] !== ' ') {
+                    center = cellCenter(r, c);
+                    context.fillText(chars[r][c], center.x, center.y);
                 }
             }
         }
-    });
+    };
+};
+
+var drawInnerGrid = function(chars) {
+    return function(context) {
+        var r, c, x, y;
+
+        context.strokeStyle = "#aaa";
+        context.setLineDash([5, 5]);
+
+        for (r = 1; r < chars.length; r += 1) {
+            y = 1 + r * CELL_DIMENSIONS.height;
+            context.beginPath();
+            context.moveTo(1, y);
+            context.lineTo(1 + chars[0].length * CELL_DIMENSIONS.width, y);
+            context.stroke();
+        }
+
+        for (c = 1; c < chars[0].length; c += 1) {
+            x = 1 + c * CELL_DIMENSIONS.width;
+            context.beginPath();
+            context.moveTo(x, 1);
+            context.lineTo(x, 1 + chars.length * CELL_DIMENSIONS.width);
+            context.stroke();
+        }
+    };
+};
+
+var draw = function(context) {
+    // Extra pixel for pixel offsets
+    canvas.width = cells[0].length * CELL_DIMENSIONS.width + 1;
+    canvas.height = cells.length * CELL_DIMENSIONS.height + 1;
+    [
+        drawInnerGrid(characters),
+        drawCells(characters),
+        drawHorizontalEdges(horizontalEdges),
+        drawVerticalEdges(verticalEdges)
+    ].forEach(function(drawLayer) { drawLayer(context); });
 };
