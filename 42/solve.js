@@ -2,6 +2,51 @@
 
 var CELL_DIMENSIONS = {width: 40, height: 40};
 
+var updateDebug = function(coordinates) {
+    document.getElementById('debug').value = "cell " + JSON.stringify(coordinates) + " clicked";
+};
+
+var clearOf = function(fraction, margin) {
+    return fraction > margin && (1 - fraction) > margin;
+};
+
+var dispatchCellClickEvents = function(location) {
+    var margin = 0.1;
+    var closest = {
+        r: location.y / CELL_DIMENSIONS.height,
+        c: location.x / CELL_DIMENSIONS.width
+    };
+
+    if (clearOf(closest.r % 1, margin) && clearOf(closest.c % 1, margin)) {
+        var coordinates = {
+            r: Math.floor(closest.r),
+            c: Math.floor(closest.c)
+        };
+
+        cellClickEvents(coordinates);
+    }
+};
+
+var puzzleClickEvents = function(location) {
+    [
+        dispatchCellClickEvents
+    ].forEach(function(f) { f(location); });
+};
+
+var cellClickEvents = function(coordinates) {
+    [
+        updateDebug
+    ].forEach(function(f) { f(coordinates); });
+};
+
+var puzzleClick = function(e) {
+    var location = {
+        x: e.x - this.offsetLeft,
+        y: e.y - this.offsetTop
+    };
+    puzzleClickEvents(location);
+};
+
 var eachCell = function(f) {
     var i, j;
     for (i = 0; i < cells.length; i += 1) {
@@ -13,18 +58,18 @@ var eachCell = function(f) {
 
 var initializeCells = function(cells) {
     var characters = [
-        "6EUZWVEFESAH3NOUIRTMN",
-        "1OITIRHG4ATWNYKOET3UE",
-        "YSHL0EHTREI3EAFD3AOSM",
-        "OROKLO1NDYLHI2ESAAEOS",
-        "YIGOUUGHTTSRNEEAESVS2",
-        "AN3EOKOORP2TINNG2E1CY",
-        "NC3HWOAU2LL1DNAOERODR",
-        "R3RTIICOCLSO3AANWBAAY",
-        "RSM3EDFIEC2DBEYFMRMOO",
-        "U2A1ISTONYEFTOATTHDN4",
-        "PSY2AWEUNR2HOEWUWEOWF",
-        "ITYSE3NADDATR2OEHNHET"
+        "22F22EB22S 32X2DP2GP2",
+        "22Z2PQD133L13S231L22Y",
+        "BL3K12SOLDYBY3MDGE32M",
+        "32FY3J13U3C3Q32CCERX2",
+        "2K22T3HS2N2D2NSPWHO3B",
+        "XC3P1M222D2UBZN1OQJ1J",
+        "AMM2C3SFBD3B232BZ1R33",
+        "23Y1J2J13QYI3X2IS32IL",
+        "32KQ32R21J1YM3WP2BO22",
+        "C1D3TPKCP2F2ZOWBA3M23",
+        "CHPR112Q2SRZ2S312BGGZ",
+        "32FGQPGAR3 2KXUNS3T3D"
     ];
 
     var directions = [

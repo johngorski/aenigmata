@@ -4,38 +4,20 @@
     <title></title>
     </head>
     <body>
-        <div id="display"><canvas id="puzzle"></canvas></div>
+        <div align="center">
+            debug: <input id="debug" type="text" /> fill: <input id="fillWith" type="text" />
+        </div>
+        <div id="display" align="center"><canvas id="puzzle"></canvas></div>
         <script type="text/javascript" src="solve.js"></script>
         <script type="text/javascript">
-            var refresh = function() { "use strict";
+            "use strict";
+            var refresh = function() {
                 applyHeuristics(heuristics);
                 drawSketches(cells, sketches);
             };
 
-            var escapeJSString = function(str) { "use strict";
-                return (str + '').replace(/\\/g, '\\\\').replace(/\"/g, '\\"').replace(/\'/g, "\\'").replace(/\n/g, "\\n");
-            };
+            document.getElementById("puzzle").addEventListener("click", puzzleClick);
 
-            var pushFunction = function(args, fList, tArea) { "use strict";
-                var fString = 'new Function("' + args.join('", "') + '", "';
-
-                var fBody = '"use strict";\n';
-                fBody += document.getElementById(tArea).value;
-
-                fString += escapeJSString(fBody);
-                fString += '");';
-                fList.push(eval(fString));
-                refresh();
-            };
-
-            var addHeuristic = function() { "use strict";
-                pushFunction(['cells'], heuristics, 'newHeuristic');
-            };
-
-            var addSketch = function() { "use strict";
-                pushFunction(['context', 'row', 'col', 'cell'], sketches, 'newSketch');
-            };
-            
             refresh();
         </script>
     </body>
