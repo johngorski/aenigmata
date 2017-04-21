@@ -27,29 +27,14 @@ var dispatchCellClickEvents = function(location) {
     }
 };
 
-var puzzleClickEvents = function(location) {
-    [
-        dispatchCellClickEvents
-    ].forEach(function(f) { f(location); });
-};
-
 var cellClickEvents = function(coordinates) {
     [
         updateDebug
     ].forEach(function(f) { f(coordinates); });
 };
 
-var eachCell = function(f) {
-    var i, j;
-    for (i = 0; i < cells.length; i += 1) {
-        for (j = 0; j < cells[0].length; j += 1) {
-            f(cells[i][j], i, j);
-        }
-    }
-};
-
 var verticalEdges = [
-    "|2F22EB22S||2X2DP2GP2|",
+    "|.F22EB22S||2X2DP2GP.|",
     "|2Z2PQD133L13S231L22Y|",
     "|L3K12SOLDYBY3MDGE32M|",
     "|2FY3J13U3C3Q32CCERX2|",
@@ -60,7 +45,7 @@ var verticalEdges = [
     "|2KQ32R21J1YM3WP2BO22|",
     "|1D3TPKCP2F2ZOWBA3M23|",
     "|HPR112Q2SRZ2S312BGGZ|",
-    "|2FGQPGAR3||KXUNS3T3D|"
+    "|2FGQPGAR3||.XUNS3T3D|"
 ];
 
 var drawVerticalEdges = function(ves) {
@@ -87,7 +72,7 @@ var drawVerticalEdges = function(ves) {
 
 var horizontalEdges = [
     "---------- ----------",
-    "22Z2PQD133-13S231L22Y",
+    ".2Z2PQD133-13S231L22.",
     "BL3K12SOLDYBY3MDGE32M",
     "32FY3J13U3C3Q32CCERX2",
     "2K22T3HS2N2D2NSPWHO3B",
@@ -97,7 +82,7 @@ var horizontalEdges = [
     "32KQ32R21J1YM3WP2BO22",
     "C1D3TPKCP2F2ZOWBA3M23",
     "CHPR112Q2SRZ2S312BGGZ",
-    "32FGQPGAR3-2KXUNS3T3D",
+    "32FGQPGAR3-.KXUNS3T3D",
     "---------- ----------"
 ];
 
@@ -121,50 +106,6 @@ var drawHorizontalEdges = function(hes) {
             }
         }
     };
-};
-
-var initialCells = function(cells) {
-    var characters = [
-        "22F22EB22S 32X2DP2GP2",
-        "22Z2PQD133L13S231L22Y",
-        "BL3K12SOLDYBY3MDGE32M",
-        "32FY3J13U3C3Q32CCERX2",
-        "2K22T3HS2N2D2NSPWHO3B",
-        "XC3P1M222D2UBZN1OQJ1J",
-        "AMM2C3SFBD3B232BZ1R33",
-        "23Y1J2J13QYI3X2IS32IL",
-        "32KQ32R21J1YM3WP2BO22",
-        "C1D3TPKCP2F2ZOWBA3M23",
-        "CHPR112Q2SRZ2S312BGGZ",
-        "32FGQPGAR3 2KXUNS3T3D"
-    ];
-
-    var directions = [
-        "r           r        ",
-        "r       d         d  ",
-        "    l      r    l    ",
-        "      d      r       ",
-        "                    u",
-        "  r       u     l u  ",
-        "  r     l  d         ",
-        " u          r        ",
-        "   r      l          ",
-        " r l                u",
-        "   u      r          ",
-        "     u       r       "
-    ];
-
-    var i, j, row;
-    for (i = 0; i < characters.length; i += 1) {
-        row = [];
-        for (j = 0; j < characters[i].length; j += 1) {
-            row[j] = {character: characters[i][j]};
-            if (directions[i][j] !== ' ') {
-                row[j].direction = directions[i][j];
-            }
-        }
-        cells[i] = row;
-    }
 };
 
 var findCellsExcludedFromPath = function(cells) {
@@ -217,55 +158,6 @@ var cellCenter = function(row, col) {
 var isNumber = function(str) {
     return str.match(/\d/) ? true : false;
 };
-
-var drawDirection = function(context, center, cell) {
-    var points, lastPoint;
-    if (cell.direction) {
-        if (cell.direction === 'l') {
-            points = [
-                {x: -1, y: 0},
-                {x: 1, y: 1},
-                {x: 1, y: -1}
-            ];
-        } else if (cell.direction === 'u') {
-            points = [
-                {x: 0, y: -1},
-                {x: -1, y: 1},
-                {x: 1, y: 1}
-            ];
-        } else if (cell.direction === 'r') {
-            points = [
-                {x: 1, y: 0},
-                {x: -1, y: 1},
-                {x: -1, y: -1}
-            ];
-        } else if (cell.direction === 'd') {
-            points = [
-                {x: 0, y: 1},
-                {x: -1, y: -1},
-                {x: 1, y: -1}
-            ];
-        }
-
-        if (points) {
-            points.forEach(function(p) {
-                p.x = center.x + p.x * CELL_DIMENSIONS.width / 3;
-                p.y = center.y + p.y * CELL_DIMENSIONS.height / 3;
-            });
-        }
-        lastPoint = points[points.length - 1];
-
-        context.beginPath();
-        context.moveTo(lastPoint.x, lastPoint.y);
-        points.forEach(function(p) {
-            context.lineTo(p.x, p.y);
-        });
-        context.fillStyle = '#aaa';
-        context.fill();
-        context.stroke();
-    }
-};
-
 var drawUpPossible = function(context, center, cell) {
     if (cell.canGoUp) {
         context.beginPath();
@@ -325,15 +217,6 @@ var drawContainsPath = function(context, center, cell) {
         context.fillStyle = "#f00";
         context.fill();
     }
-};
-
-var eachCellInDirection = function(startRow, startCol, direction, f) {
-    var dCell = rowColDeltaFromDirection(direction);
-    for (i = row, j = col;
-         i >= 0 && j >= 0 && i < cells.length && j < cells[0].length;
-         i += dCell.i, j += dCell.j) {
-             f(cells[i][j]);
-     }
 };
 
 var markPathCellsFromExhaustedShade = function(cells) {
@@ -422,20 +305,6 @@ var drawPath = function(context, center, cell) {
 
 var cells = [];
 
-var heuristics = [
-    initialCells
-];
-
-var applyHeuristics = function(heuristics) {
-    heuristics.forEach(function(h) {
-        try {
-            h(cells);
-        } catch (e) {
-            // Don't let failed past heuristics stop future heuristics
-        }
-    });
-};
-
 var sketches = [
 ];
 var context = puzzle.getContext("2d");
@@ -505,8 +374,8 @@ var drawInnerGrid = function(chars) {
 
 var draw = function(context) {
     // Extra pixel for pixel offsets
-    canvas.width = cells[0].length * CELL_DIMENSIONS.width + 1;
-    canvas.height = cells.length * CELL_DIMENSIONS.height + 1;
+    canvas.width = characters[0].length * CELL_DIMENSIONS.width + 1;
+    canvas.height = characters.length * CELL_DIMENSIONS.height + 1;
     [
         drawInnerGrid(characters),
         drawCells(characters),
@@ -514,3 +383,77 @@ var draw = function(context) {
         drawVerticalEdges(verticalEdges)
     ].forEach(function(drawLayer) { drawLayer(context); });
 };
+
+
+
+
+
+// Save for later? //////////
+
+var eachCellInDirection = function(startRow, startCol, direction, f) {
+    var dCell = rowColDeltaFromDirection(direction);
+    for (i = row, j = col;
+         i >= 0 && j >= 0 && i < cells.length && j < cells[0].length;
+         i += dCell.i, j += dCell.j) {
+             f(cells[i][j]);
+     }
+};
+
+var eachCell = function(f) {
+    var i, j;
+    for (i = 0; i < cells.length; i += 1) {
+        for (j = 0; j < cells[0].length; j += 1) {
+            f(cells[i][j], i, j);
+        }
+    }
+};
+
+var drawDirection = function(context, center, cell) {
+    var points, lastPoint;
+    if (cell.direction) {
+        if (cell.direction === 'l') {
+            points = [
+                {x: -1, y: 0},
+                {x: 1, y: 1},
+                {x: 1, y: -1}
+            ];
+        } else if (cell.direction === 'u') {
+            points = [
+                {x: 0, y: -1},
+                {x: -1, y: 1},
+                {x: 1, y: 1}
+            ];
+        } else if (cell.direction === 'r') {
+            points = [
+                {x: 1, y: 0},
+                {x: -1, y: 1},
+                {x: -1, y: -1}
+            ];
+        } else if (cell.direction === 'd') {
+            points = [
+                {x: 0, y: 1},
+                {x: -1, y: -1},
+                {x: 1, y: -1}
+            ];
+        }
+
+        if (points) {
+            points.forEach(function(p) {
+                p.x = center.x + p.x * CELL_DIMENSIONS.width / 3;
+                p.y = center.y + p.y * CELL_DIMENSIONS.height / 3;
+            });
+        }
+        lastPoint = points[points.length - 1];
+
+        context.beginPath();
+        context.moveTo(lastPoint.x, lastPoint.y);
+        points.forEach(function(p) {
+            context.lineTo(p.x, p.y);
+        });
+        context.fillStyle = '#aaa';
+        context.fill();
+        context.stroke();
+    }
+};
+
+

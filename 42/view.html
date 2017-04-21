@@ -15,24 +15,18 @@
 
             // when the canvas is clicked, the puzzle may change.
 
-            // puzzleCanvas.addEventListener("click", puzzleClick);
             puzzleCanvas.addEventListener("click", function(e) {
-                puzzleClickEvents({
+                // get changes to puzzle based on click
+                // if there are changes,
+                //   apply them to the puzzle
+                //   redraw the puzzle
+                dispatchCellClickEvents({
                     x: e.x - puzzleCanvas.offsetLeft,
                     y: e.y - puzzleCanvas.offsetTop
                 });
             });
 
-            // when the puzzle changes, we redraw.
-            // define puzzle
-
-            var refresh = function() {
-                applyHeuristics(heuristics);
-                drawSketches(cells, sketches);
-                draw(puzzleCanvas.getContext("2d"));
-            };
-
-            refresh();
+            draw(puzzleCanvas.getContext("2d"));
         </script>
     </body>
 </html>
