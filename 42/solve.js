@@ -27,51 +27,51 @@ var dispatchCellClickEvents = function(location) {
     }
 };
 
-var characters = [
-    "22F22EB22S 32X2DP2GP2",
-    "22Z2PQD133L13S231L22Y",
-    "BL3K12SOLDYBY3MDGE32M",
-    "32FY3J13U3C3Q32CCERX2",
-    "2K22T3HS2N2D2NSPWHO3B",
-    "XC3P1M222D2UBZN1OQJ1J",
-    "AMM2C3SFBD3B232BZ1R33",
-    "23Y1J2J13QYI3X2IS32IL",
-    "32KQ32R21J1YM3WP2BO22",
-    "C1D3TPKCP2F2ZOWBA3M23",
-    "CHPR112Q2SRZ2S312BGGZ",
-    "32FGQPGAR3 2KXUNS3T3D"
-];
-
-var verticalEdges = [
-    "|.F22EB22S||2X2DP2GP.|",
-    "|2Z2PQD133L13S231L22Y|",
-    "|L3K12SOLDYBY3MDGE32M|",
-    "|2FY3J13U3C3Q32CCERX2|",
-    "|K22T3HS2N2D2NSPWHO3B|",
-    "|C3P1M222D2UBZN1OQJ1J|",
-    "|MM2C3SFBD3B232BZ1R33|",
-    "|3Y1J2J13QYI3X2IS32IL|",
-    "|2KQ32R21J1YM3WP2BO22|",
-    "|1D3TPKCP2F2ZOWBA3M23|",
-    "|HPR112Q2SRZ2S312BGGZ|",
-    "|2FGQPGAR3||.XUNS3T3D|"
-];
-
-var horizontalEdges = [
-    "---------- ----------",
-    ".2Z2PQD133-13S231L22.",
-    "BL3K12SOLDYBY3MDGE32M",
-    "32FY3J13U3C3Q32CCERX2",
-    "2K22T3HS2N2D2NSPWHO3B",
-    "XC3P1M222D2UBZN1OQJ1J",
-    "AMM2C3SFBD3B232BZ1R33",
-    "23Y1J2J13QYI3X2IS32IL",
-    "32KQ32R21J1YM3WP2BO22",
-    "C1D3TPKCP2F2ZOWBA3M23",
-    "CHPR112Q2SRZ2S312BGGZ",
-    "32FGQPGAR3-.KXUNS3T3D",
-    "---------- ----------"
-];
+var gerrymanderPuzzle = {
+    characters: [
+        "22F22EB22S 32X2DP2GP2",
+        "22Z2PQD133L13S231L22Y",
+        "BL3K12SOLDYBY3MDGE32M",
+        "32FY3J13U3C3Q32CCERX2",
+        "2K22T3HS2N2D2NSPWHO3B",
+        "XC3P1M222D2UBZN1OQJ1J",
+        "AMM2C3SFBD3B232BZ1R33",
+        "23Y1J2J13QYI3X2IS32IL",
+        "32KQ32R21J1YM3WP2BO22",
+        "C1D3TPKCP2F2ZOWBA3M23",
+        "CHPR112Q2SRZ2S312BGGZ",
+        "32FGQPGAR3 2KXUNS3T3D"
+    ],
+    verticalEdges: [
+        "|.F22EB22S||2X2DP2GP.|",
+        "|2Z2PQD133L13S231L22Y|",
+        "|L3K12SOLDYBY3MDGE32M|",
+        "|2FY3J13U3C3Q32CCERX2|",
+        "|K22T3HS2N2D2NSPWHO3B|",
+        "|C3P1M222D2UBZN1OQJ1J|",
+        "|MM2C3SFBD3B232BZ1R33|",
+        "|3Y1J2J13QYI3X2IS32IL|",
+        "|2KQ32R21J1YM3WP2BO22|",
+        "|1D3TPKCP2F2ZOWBA3M23|",
+        "|HPR112Q2SRZ2S312BGGZ|",
+        "|2FGQPGAR3||.XUNS3T3D|"
+    ],
+    horizontalEdges: [
+        "---------- ----------",
+        ".2Z2PQD133-13S231L22.",
+        "BL3K12SOLDYBY3MDGE32M",
+        "32FY3J13U3C3Q32CCERX2",
+        "2K22T3HS2N2D2NSPWHO3B",
+        "XC3P1M222D2UBZN1OQJ1J",
+        "AMM2C3SFBD3B232BZ1R33",
+        "23Y1J2J13QYI3X2IS32IL",
+        "32KQ32R21J1YM3WP2BO22",
+        "C1D3TPKCP2F2ZOWBA3M23",
+        "CHPR112Q2SRZ2S312BGGZ",
+        "32FGQPGAR3-.KXUNS3T3D",
+        "---------- ----------"
+    ]
+};
 
 var drawVerticalEdges = function(ves) {
     return function(context) {
@@ -170,18 +170,16 @@ var drawInnerGrid = function(chars) {
     };
 };
 
-var canvas = document.getElementById("puzzle");
-
 var draw = function(canvas) {
     var context = canvas.getContext('2d');
     // Extra pixel for pixel offsets
-    canvas.width = characters[0].length * CELL_DIMENSIONS.width + 1;
-    canvas.height = characters.length * CELL_DIMENSIONS.height + 1;
+    canvas.width = gerrymanderPuzzle.characters[0].length * CELL_DIMENSIONS.width + 1;
+    canvas.height = gerrymanderPuzzle.characters.length * CELL_DIMENSIONS.height + 1;
     [
-        drawInnerGrid(characters),
-        drawCellText(characters),
-        drawHorizontalEdges(horizontalEdges),
-        drawVerticalEdges(verticalEdges)
+        drawInnerGrid(gerrymanderPuzzle.characters),
+        drawCellText(gerrymanderPuzzle.characters),
+        drawHorizontalEdges(gerrymanderPuzzle.horizontalEdges),
+        drawVerticalEdges(gerrymanderPuzzle.verticalEdges)
     ].forEach(function(drawLayer) { drawLayer(context); });
 };
 
