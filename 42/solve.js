@@ -27,6 +27,21 @@ var dispatchCellClickEvents = function(location) {
     }
 };
 
+var characters = [
+    "22F22EB22S 32X2DP2GP2",
+    "22Z2PQD133L13S231L22Y",
+    "BL3K12SOLDYBY3MDGE32M",
+    "32FY3J13U3C3Q32CCERX2",
+    "2K22T3HS2N2D2NSPWHO3B",
+    "XC3P1M222D2UBZN1OQJ1J",
+    "AMM2C3SFBD3B232BZ1R33",
+    "23Y1J2J13QYI3X2IS32IL",
+    "32KQ32R21J1YM3WP2BO22",
+    "C1D3TPKCP2F2ZOWBA3M23",
+    "CHPR112Q2SRZ2S312BGGZ",
+    "32FGQPGAR3 2KXUNS3T3D"
+];
+
 var verticalEdges = [
     "|.F22EB22S||2X2DP2GP.|",
     "|2Z2PQD133L13S231L22Y|",
@@ -40,6 +55,22 @@ var verticalEdges = [
     "|1D3TPKCP2F2ZOWBA3M23|",
     "|HPR112Q2SRZ2S312BGGZ|",
     "|2FGQPGAR3||.XUNS3T3D|"
+];
+
+var horizontalEdges = [
+    "---------- ----------",
+    ".2Z2PQD133-13S231L22.",
+    "BL3K12SOLDYBY3MDGE32M",
+    "32FY3J13U3C3Q32CCERX2",
+    "2K22T3HS2N2D2NSPWHO3B",
+    "XC3P1M222D2UBZN1OQJ1J",
+    "AMM2C3SFBD3B232BZ1R33",
+    "23Y1J2J13QYI3X2IS32IL",
+    "32KQ32R21J1YM3WP2BO22",
+    "C1D3TPKCP2F2ZOWBA3M23",
+    "CHPR112Q2SRZ2S312BGGZ",
+    "32FGQPGAR3-.KXUNS3T3D",
+    "---------- ----------"
 ];
 
 var drawVerticalEdges = function(ves) {
@@ -64,22 +95,6 @@ var drawVerticalEdges = function(ves) {
         }
     }
 };
-
-var horizontalEdges = [
-    "---------- ----------",
-    ".2Z2PQD133-13S231L22.",
-    "BL3K12SOLDYBY3MDGE32M",
-    "32FY3J13U3C3Q32CCERX2",
-    "2K22T3HS2N2D2NSPWHO3B",
-    "XC3P1M222D2UBZN1OQJ1J",
-    "AMM2C3SFBD3B232BZ1R33",
-    "23Y1J2J13QYI3X2IS32IL",
-    "32KQ32R21J1YM3WP2BO22",
-    "C1D3TPKCP2F2ZOWBA3M23",
-    "CHPR112Q2SRZ2S312BGGZ",
-    "32FGQPGAR3-.KXUNS3T3D",
-    "---------- ----------"
-];
 
 var drawHorizontalEdges = function(hes) {
     return function(context) {
@@ -111,80 +126,7 @@ var cellCenter = function(row, col) {
     };
 };
 
-var markPathWhenDegree2CellsContainPath = function(cells) {
-    eachCell(function(cell, i, j) {
-        if (cell.degree === 2 && cell.containsPath) {
-            if (cell.canGoUp) {
-                cell.pathUp = true;
-                if (i > 0) {
-                    cells[i - 1][j].pathDown = true;
-                }
-            }
-            if (cell.canGoDown) {
-                cell.pathDown = true;
-                if (i + 1 < cells.length) {
-                    cells[i + 1][j].pathUp = true;
-                }
-            }
-            if (cell.canGoLeft) {
-                cell.pathLeft = true;
-                if (j > 0) {
-                    cells[i][j - 1].pathRight = true;
-                }
-            }
-            if (cell.canGoRight) {
-                cell.pathRight = true;
-                if (j + 1 < cells[0].length) {
-                    cells[i][j + 1].pathLeft = true;
-                }
-            }
-        }
-    });
-};
-
-var drawPath = function(context, center, cell) {
-    var w = CELL_DIMENSIONS.width / 2;
-    var h = CELL_DIMENSIONS.height / 2;
-    var centerTo = function(x, y) {
-        context.moveTo(center.x, center.y);
-        context.lineTo(x, y);
-    };
-    context.beginPath();
-    context.strokeStyle = "#00f";
-    context.lineWidth = CELL_DIMENSIONS.width / 10;
-
-    if (cell.pathUp) {
-        centerTo(center.x, center.y - h);
-    }
-    if (cell.pathDown) {
-        centerTo(center.x, center.y + h);
-    }
-    if (cell.pathLeft) {
-        centerTo(center.x - w, center.y);
-    }
-    if (cell.pathRight) {
-        centerTo(center.x + w, center.y);
-    }
-
-    context.stroke();
-};
-
-var characters = [
-    "22F22EB22S 32X2DP2GP2",
-    "22Z2PQD133L13S231L22Y",
-    "BL3K12SOLDYBY3MDGE32M",
-    "32FY3J13U3C3Q32CCERX2",
-    "2K22T3HS2N2D2NSPWHO3B",
-    "XC3P1M222D2UBZN1OQJ1J",
-    "AMM2C3SFBD3B232BZ1R33",
-    "23Y1J2J13QYI3X2IS32IL",
-    "32KQ32R21J1YM3WP2BO22",
-    "C1D3TPKCP2F2ZOWBA3M23",
-    "CHPR112Q2SRZ2S312BGGZ",
-    "32FGQPGAR3 2KXUNS3T3D"
-];
-
-var drawCells = function(chars) {
+var drawCellText = function(chars) {
     return function(context) {
         var r, c, center;
         context.font = "24px sans-serif";
@@ -230,13 +172,14 @@ var drawInnerGrid = function(chars) {
 
 var canvas = document.getElementById("puzzle");
 
-var draw = function(context) {
+var draw = function(canvas) {
+    var context = canvas.getContext('2d');
     // Extra pixel for pixel offsets
     canvas.width = characters[0].length * CELL_DIMENSIONS.width + 1;
     canvas.height = characters.length * CELL_DIMENSIONS.height + 1;
     [
         drawInnerGrid(characters),
-        drawCells(characters),
+        drawCellText(characters),
         drawHorizontalEdges(horizontalEdges),
         drawVerticalEdges(verticalEdges)
     ].forEach(function(drawLayer) { drawLayer(context); });
@@ -433,5 +376,63 @@ var markPathCellsFromExhaustedShade = function(cells) {
             }
         }
     });
+};
+
+var markPathWhenDegree2CellsContainPath = function(cells) {
+    eachCell(function(cell, i, j) {
+        if (cell.degree === 2 && cell.containsPath) {
+            if (cell.canGoUp) {
+                cell.pathUp = true;
+                if (i > 0) {
+                    cells[i - 1][j].pathDown = true;
+                }
+            }
+            if (cell.canGoDown) {
+                cell.pathDown = true;
+                if (i + 1 < cells.length) {
+                    cells[i + 1][j].pathUp = true;
+                }
+            }
+            if (cell.canGoLeft) {
+                cell.pathLeft = true;
+                if (j > 0) {
+                    cells[i][j - 1].pathRight = true;
+                }
+            }
+            if (cell.canGoRight) {
+                cell.pathRight = true;
+                if (j + 1 < cells[0].length) {
+                    cells[i][j + 1].pathLeft = true;
+                }
+            }
+        }
+    });
+};
+
+var drawPath = function(context, center, cell) {
+    var w = CELL_DIMENSIONS.width / 2;
+    var h = CELL_DIMENSIONS.height / 2;
+    var centerTo = function(x, y) {
+        context.moveTo(center.x, center.y);
+        context.lineTo(x, y);
+    };
+    context.beginPath();
+    context.strokeStyle = "#00f";
+    context.lineWidth = CELL_DIMENSIONS.width / 10;
+
+    if (cell.pathUp) {
+        centerTo(center.x, center.y - h);
+    }
+    if (cell.pathDown) {
+        centerTo(center.x, center.y + h);
+    }
+    if (cell.pathLeft) {
+        centerTo(center.x - w, center.y);
+    }
+    if (cell.pathRight) {
+        centerTo(center.x + w, center.y);
+    }
+
+    context.stroke();
 };
 
