@@ -10,6 +10,21 @@ var clearOf = function(fraction, margin) {
     return fraction > margin && (1 - fraction) > margin;
 };
 
+var toggleHorizontalEdge = function(row, leftIndex) {
+    return function(puzzle) {
+        var copy = {
+            characters: puzzle.characters,
+            horizontalEdges: puzzle.horizontalEdges,
+            verticalEdges: puzzle.verticalEdges
+        };
+
+        copy.horizontalEdges[row][leftIndex] = (copy.horizontalEdges[row][leftIndex] === '-') ? 'o'
+            : (copy.horizontalEdges[row][leftIndex] === '.') ? '-'
+            : '.';
+        return copy;
+    };
+};
+
 var toggleVerticalEdge = function(row, leftIndex) {
     return function(puzzle) {
         var copy = {
@@ -39,18 +54,25 @@ var dispatchCellClickEvents = function(location) {
         c: Math.floor(closest.c)
     };
 
-    if (clearOf(cellY, margin) && clearOf(cellX, margin)) {
-        // var coordinates = {
-            // r: Math.floor(closest.r),
-            // c: Math.floor(closest.c)
-        // };
+    var toggles = [];
 
-        updateDebug(coordinates);
+    if (clearOf(cellY, margin)) {
+        if (clearOf(cellX, margin)) {
+            updateDebug(coordinates);
+        } else if (cellX < margin) {
+            toggles.push(toggleVerticalEdge(coordinates.r, coordinates.c));
+        } else if (cellX > 1 - margin) {
+            toggles.push(toggleVerticalEdge(coordinates.r, coordinates.c + 1));
+        }
+    } else if (clearOf(cellX, margin)) {
+        if (cellY < margin) {
+            toggles.push(toggleHorizontalEdge(coordinates.r, coordinates.c));
+        } else if (cellY > 1 - margin) {
+            toggles.push(toggleHorizontalEdge(coordinates.r + 1, coordinates.c));
+        }
     }
 
-    return [
-        toggleVerticalEdge(coordinates.r, coordinates.c)
-    ];
+    return toggles;
 };
 
 var gerrymanderPuzzle = function() {
