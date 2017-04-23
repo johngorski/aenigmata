@@ -2,10 +2,6 @@
 
 var CELL_DIMENSIONS = {width: 40, height: 40};
 
-var updateDebug = function(coordinates) {
-    document.getElementById('debug').value = "cell " + JSON.stringify(coordinates) + " clicked";
-};
-
 var clearOf = function(fraction, margin) {
     return fraction > margin && (1 - fraction) > margin;
 };
@@ -57,9 +53,7 @@ var dispatchCellClickEvents = function(location) {
     var toggles = [];
 
     if (clearOf(cellY, margin)) {
-        if (clearOf(cellX, margin)) {
-            updateDebug(coordinates);
-        } else if (cellX < margin) {
+        if (cellX < margin) {
             toggles.push(toggleVerticalEdge(coordinates.r, coordinates.c));
         } else if (cellX > 1 - margin) {
             toggles.push(toggleVerticalEdge(coordinates.r, coordinates.c + 1));
@@ -121,6 +115,39 @@ var gerrymanderPuzzle = function() {
             "---------- ----------"
         ].map(function(row) { return row.split(''); })
     };
+};
+
+var practicePuzzle = function() {
+    return {
+        characters: [
+            "MAA K1Z",
+            "PN0TMON",
+            "RTCZQWB",
+            " G1M2C ",
+            "M3K2K2I",
+            "D3LHS3A",
+            "MSS ION"
+        ],
+        horizontalEdges: [
+            "--- ---",
+            "MAA-K1Z",
+            "PN0TMON",
+            "-TCZQW-",
+            "-G1M2C-",
+            "M3K2K2I",
+            "D3L-S3A",
+            "--- ---"
+        ].map(function(row) { return row.split(''); }),
+        verticalEdges: [
+            "|AA||1Z|",
+            "|N0TMON|",
+            "|TCZQWB|",
+            " |1M2C| ",
+            "|3K2K2I|",
+            "|3LHS3A|",
+            "|SS||ON|"
+        ].map(function(row) { return row.split(''); })
+    }
 };
 
 var drawVerticalEdges = function(ves) {
